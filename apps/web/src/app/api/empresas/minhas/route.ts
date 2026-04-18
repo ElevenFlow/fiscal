@@ -1,13 +1,12 @@
-import { fetchApi } from '@/lib/api-client';
 import { NextResponse } from 'next/server';
 
 /**
- * Route Handler proxy (BLOCKER #2 Option A — Plan 09) para EmpresaSwitcher.
+ * MODO PROTÓTIPO: retorna lista mock de empresas visíveis ao usuário.
  *
- * Client (browser, same-origin, cookie Clerk) → este handler → fetchApi(JWT Bearer) → apps/api.
- *
- * Stub neste plan: apps/api retorna lista placeholder. Phase 2 (CAD-02) pluga
- * query real `empresas ⋈ contabilidade_empresas ⋈ contabilidade (clerk_org_id)`.
+ * No modo real (ver git log 01-07/01-09), o handler proxy para apps/api
+ * GET /api/empresas/minhas usando JWT Clerk. Aqui só devolve as empresas
+ * do fixture para manter compatibilidade com `empresa-switcher.tsx` enquanto
+ * este componente é migrado para consumir `mock-data.ts` direto.
  */
 
 export const runtime = 'nodejs';
@@ -21,15 +20,25 @@ export interface EmpresaDTO {
 }
 
 export async function GET(): Promise<NextResponse> {
-  try {
-    const data = await fetchApi<{ empresas: EmpresaDTO[] }>('/api/empresas/minhas');
-    return NextResponse.json(data, {
-      headers: { 'Cache-Control': 'no-store' },
-    });
-  } catch (err) {
-    const msg = (err as Error).message;
-    // fetchApi lança com o status no message (ex: "failed: 401 ..."); distinguir auth
-    const status = /\b40(1|3)\b/.test(msg) ? 401 : 500;
-    return NextResponse.json({ error: 'Falha ao carregar empresas' }, { status });
-  }
+  const empresas: EmpresaDTO[] = [
+    {
+      id: 'e-1',
+      razaoSocial: 'Oliveira Tech Soluções LTDA',
+      cnpj: '12.345.678/0001-90',
+      ambiente: 'producao',
+    },
+    {
+      id: 'e-2',
+      razaoSocial: 'Clínica Vida Integral ME',
+      cnpj: '23.456.789/0001-12',
+      ambiente: 'producao',
+    },
+    {
+      id: 'e-3',
+      razaoSocial: 'Solar Engenharia LTDA',
+      cnpj: '34.567.890/0001-23',
+      ambiente: 'homologacao',
+    },
+  ];
+  return NextResponse.json({ empresas }, { headers: { 'Cache-Control': 'no-store' } });
 }
