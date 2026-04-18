@@ -10,6 +10,6 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
     },
-    include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
+    include: ['tests/**/*.test.ts', 'tests/**/*.spec.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
   },
 });
