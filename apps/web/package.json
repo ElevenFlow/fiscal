@@ -13,6 +13,7 @@
   "dependencies": {
     "@nexo/shared": "workspace:*",
     "@nexo/ui": "workspace:*",
+    "@sentry/nextjs": "^8.47.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "lucide-react": "^0.468.0",
