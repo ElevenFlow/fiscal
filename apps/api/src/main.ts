@@ -1,3 +1,8 @@
+// MUST be first — OTel precisa patchear require() antes de importar libs instrumentadas.
+// (Plan 01-10: initOtel é idempotente e no-op se OTLP endpoint ausente → ConsoleSpanExporter em dev.)
+import { initOtel } from './modules/observability/otel';
+initOtel();
+
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
