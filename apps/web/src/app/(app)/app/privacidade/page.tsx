@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
-import { Card, CardContent, CardHeader, CardTitle } from '@nexo/ui';
-import { ExportDataButton } from '@/components/lgpd/export-data-button';
 import { DeleteDataForm } from '@/components/lgpd/delete-data-form';
+import { ExportDataButton } from '@/components/lgpd/export-data-button';
+import { Card, CardContent, CardHeader, CardTitle } from '@nexo/ui';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Privacidade' };
 

@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
 import { Card, CardContent, CardHeader, CardTitle } from '@nexo/ui';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Política de privacidade' };
 
@@ -45,8 +45,8 @@ export default function PrivacidadePublicaPage() {
         <CardContent className="space-y-3 text-sm">
           <p>
             <strong>Base legal (LGPD Art. 7º II):</strong> cumprimento de obrigação legal ou
-            regulatória. Dados fiscais (XMLs autorizados, DANFEs, audit trail) são tratados com
-            base no CTN Arts. 173, 174 e 195, que exigem retenção mínima de 5 anos.
+            regulatória. Dados fiscais (XMLs autorizados, DANFEs, audit trail) são tratados com base
+            no CTN Arts. 173, 174 e 195, que exigem retenção mínima de 5 anos.
           </p>
           <p>
             <strong>Retenção de XMLs fiscais:</strong> 6 anos em S3 Object Lock Compliance Mode

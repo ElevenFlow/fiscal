@@ -11,20 +11,25 @@
     "test": "echo 'no tests yet'"
   },
   "dependencies": {
+    "@clerk/localizations": "^3.9.0",
+    "@clerk/nextjs": "^6.9.0",
     "@nexo/shared": "workspace:*",
     "@nexo/ui": "workspace:*",
     "@sentry/nextjs": "^8.47.0",
+    "pg": "^8.13.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "lucide-react": "^0.468.0",
     "next": "15.1.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "svix": "^1.44.0",
     "tailwind-merge": "^2.5.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",

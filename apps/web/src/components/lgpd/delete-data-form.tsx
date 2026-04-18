@@ -1,8 +1,8 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@nexo/ui';
+import { AlertTriangle } from 'lucide-react';
+import { type FormEvent, useState } from 'react';
 
 /**
  * DeleteDataForm — chama route handler same-origin (BLOCKER #2 Option A).

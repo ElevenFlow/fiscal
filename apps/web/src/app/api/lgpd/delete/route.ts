@@ -1,5 +1,5 @@
-import { type NextRequest, NextResponse } from 'next/server';
 import { fetchApi } from '@/lib/api-client';
+import { type NextRequest, NextResponse } from 'next/server';
 
 interface DeleteBody {
   reason?: string;
@@ -40,9 +40,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'internal_error';
     const status = /401|403/.test(message) ? 401 : 500;
-    return NextResponse.json(
-      { error: 'lgpd_delete_failed', detail: message },
-      { status },
-    );
+    return NextResponse.json({ error: 'lgpd_delete_failed', detail: message }, { status });
   }
 }

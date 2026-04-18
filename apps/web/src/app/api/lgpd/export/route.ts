@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { fetchApi } from '@/lib/api-client';
+import { NextResponse } from 'next/server';
 
 /**
  * Next.js Route Handler — proxy autenticado para apps/api GET /api/lgpd/export.
@@ -29,9 +29,6 @@ export async function GET(): Promise<NextResponse> {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'internal_error';
     const status = /401|403/.test(message) ? 401 : 500;
-    return NextResponse.json(
-      { error: 'lgpd_export_failed', detail: message },
-      { status },
-    );
+    return NextResponse.json({ error: 'lgpd_export_failed', detail: message }, { status });
   }
 }
