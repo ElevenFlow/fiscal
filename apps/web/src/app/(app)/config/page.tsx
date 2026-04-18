@@ -16,8 +16,7 @@ export default function ConfigPage() {
           <CardTitle>Em breve</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Funcionalidades expandidas nas Phases 2 (certificado/séries) e 7
-          (usuários/permissões).
+          Funcionalidades expandidas nas Phases 2 (certificado/séries) e 7 (usuários/permissões).
         </CardContent>
       </Card>
     </div>

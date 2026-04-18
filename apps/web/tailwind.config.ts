@@ -1,5 +1,5 @@
-import type { Config } from 'tailwindcss';
 import uiPreset from '@nexo/ui/tailwind-preset';
+import type { Config } from 'tailwindcss';
 
 /**
  * Tailwind config do Next.js app.

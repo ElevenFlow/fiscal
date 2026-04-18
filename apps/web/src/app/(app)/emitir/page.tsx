@@ -13,13 +13,11 @@ export default function EmitirPage() {
       {/* Aviso exibido apenas em mobile — FOUND-16 (degradação explícita em mobile) */}
       <Card className="md:hidden border-brand-warning bg-brand-warning/10">
         <CardHeader>
-          <CardTitle className="text-brand-warning">
-            Tela maior necessária
-          </CardTitle>
+          <CardTitle className="text-brand-warning">Tela maior necessária</CardTitle>
         </CardHeader>
         <CardContent className="text-sm">
-          A emissão de nota fiscal requer tela de tablet ou desktop. Acesse de um
-          aparelho maior para continuar.
+          A emissão de nota fiscal requer tela de tablet ou desktop. Acesse de um aparelho maior
+          para continuar.
         </CardContent>
       </Card>
 

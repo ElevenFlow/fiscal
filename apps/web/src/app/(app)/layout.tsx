@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
 import { Header } from '@/components/shell/header';
 import { Sidebar } from '@/components/shell/sidebar';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Aplicação',

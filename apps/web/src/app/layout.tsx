@@ -21,8 +21,7 @@ export const metadata: Metadata = {
     default: 'Nexo Fiscal',
     template: '%s · Nexo Fiscal',
   },
-  description:
-    'SaaS fiscal brasileiro — emissão NFS-e, NF-e e devolução em menos de um minuto.',
+  description: 'SaaS fiscal brasileiro — emissão NFS-e, NF-e e devolução em menos de um minuto.',
   applicationName: 'Nexo Fiscal',
   icons: { icon: '/favicon.ico' },
 };
@@ -37,9 +36,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
-      >
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>
