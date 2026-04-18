@@ -75,9 +75,12 @@ export async function withTenantContext<T>(
   return prisma.$transaction(async (tx) => {
     // SET LOCAL para o escopo da transação. Vazamento entre pool conns bloqueado.
     // Uso de $executeRawUnsafe com valores validados acima.
+    // NOTA: `app.current_user_id` (não `app.current_user`) — `current_user`
+    // é palavra-chave reservada do Postgres e causa syntax error em SET LOCAL.
+    // Ref: migration 20260417000100_rls_policies/migration.sql.
     await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant = '${tenantValue}'`);
     await tx.$executeRawUnsafe(`SET LOCAL app.current_contabilidade = '${contabilidadeValue}'`);
-    await tx.$executeRawUnsafe(`SET LOCAL app.current_user = '${userValue}'`);
+    await tx.$executeRawUnsafe(`SET LOCAL app.current_user_id = '${userValue}'`);
     await tx.$executeRawUnsafe(`SET LOCAL app.role = '${fullScope.role}'`);
 
     return tenantStore.run(fullScope, () => callback(tx));

@@ -48,13 +48,18 @@ CREATE POLICY contabilidade_empresas_isolation ON contabilidade_empresas
 
 -- ============================================================================
 -- user_memberships — user vê apenas suas próprias memberships; admin vê todas
+--
+-- NOTA DE NOMENCLATURA: usamos `app.current_user_id` (não `app.current_user`)
+-- porque `current_user` é palavra-chave reservada do Postgres — `SET LOCAL
+-- app.current_user = ...` gera syntax error no parser. Todos os GUCs seguem
+-- o mesmo padrão em with-tenant.ts.
 -- ============================================================================
 ALTER TABLE user_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_memberships FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY user_memberships_isolation ON user_memberships
   USING (
-    user_id = NULLIF(current_setting('app.current_user', true), '')::uuid
+    user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
     OR current_setting('app.role', true) = 'platform_admin'
   )
   WITH CHECK (
