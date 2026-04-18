@@ -38,6 +38,7 @@
       "dist",
       ".next",
       ".turbo",
+      ".planning",
       "coverage",
       "**/generated/**",
       "pnpm-lock.yaml"
