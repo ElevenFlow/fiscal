@@ -7,6 +7,7 @@ import { HealthModule } from './modules/health/health.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { RolesGuard } from './modules/rbac/roles.guard';
 import { AuditInterceptor } from './modules/audit/audit.interceptor';
 import { loadEnv } from './config/env';
@@ -23,6 +24,7 @@ import { loadEnv } from './config/env';
     TenantsModule, // aplica TenantContextMiddleware globalmente
     RbacModule,
     AuditModule,
+    StorageModule, // S3Service + ObjectLockVerifier (FOUND-11)
     HealthModule,
   ],
   providers: [
