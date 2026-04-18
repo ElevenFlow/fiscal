@@ -11,17 +11,20 @@
     "test": "echo 'no tests yet'"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@nexo/shared": "workspace:*",
     "@nexo/ui": "workspace:*",
     "@sentry/nextjs": "^8.47.0",
-    "pg": "^8.13.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "lucide-react": "^0.468.0",
     "next": "15.1.0",
+    "pg": "^8.13.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-hook-form": "^7.72.1",
     "recharts": "^2.13.3",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^2.5.5",
     "zod": "^3.23.8"
   },
