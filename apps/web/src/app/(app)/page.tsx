@@ -1,25 +1,19 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@nexo/ui';
+'use client';
 
+import { DashboardAdmin } from '@/components/dashboard/dashboard-admin';
+import { DashboardContabilidade } from '@/components/dashboard/dashboard-contabilidade';
+import { DashboardEmpresa } from '@/components/dashboard/dashboard-empresa';
+import { useMockRole } from '@/lib/mock-auth';
+
+/**
+ * Dashboard principal. Renderiza a variação conforme o perfil ativo no
+ * `MockAuthProvider`. A troca via user-menu ("Ver como…") causa re-render
+ * imediato sem recarregar página.
+ */
 export default function DashboardPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral da plataforma Nexo Fiscal.</p>
-      </div>
+  const role = useMockRole();
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Em construção</CardTitle>
-          <CardDescription>
-            Este dashboard será implementado na Phase 6 com os três painéis (Admin, Contabilidade,
-            Empresa).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Phase 1 entrega a fundação de segurança (auth, RLS, audit, shell UI).
-        </CardContent>
-      </Card>
-    </div>
-  );
+  if (role === 'admin') return <DashboardAdmin />;
+  if (role === 'contabilidade') return <DashboardContabilidade />;
+  return <DashboardEmpresa />;
 }
