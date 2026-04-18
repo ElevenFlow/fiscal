@@ -8,13 +8,23 @@
     "start": "node dist/main.js",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit",
-    "test": "echo 'no tests yet'"
+    "test": "vitest run",
+    "test:rls": "vitest run tests/rls-regression.test.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL prisma migrate deploy",
+    "db:migrate:dev": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL prisma migrate dev",
+    "db:reset": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL prisma migrate reset --force",
+    "db:seed": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-fastify": "^11.0.0",
     "@nexo/shared": "workspace:*",
+    "@prisma/client": "^6.1.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^3.23.8"
@@ -23,6 +33,11 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@types/node": "^22.10.0",
-    "typescript": "^5.6.3"
+    "@vitest/coverage-v8": "^2.1.8",
+    "cross-env": "^7.0.3",
+    "prisma": "^6.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
   }
 }

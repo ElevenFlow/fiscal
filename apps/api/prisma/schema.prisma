@@ -1,0 +1,125 @@
+// Nexo Fiscal — Prisma schema
+// Multi-tenant via tenant_id + Postgres RLS (Row-Level Security).
+// ARCHITECTURE.md: hierarquia Admin > Contabilidade > Empresa
+// PITFALLS.md #1: RLS é defesa final contra vazamento cross-tenant
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [uuidOssp(map: "uuid-ossp"), pgcrypto]
+}
+
+// ============================================================================
+// Identity
+// ============================================================================
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  clerkUserId String?  @unique @map("clerk_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  memberships UserMembership[]
+
+  @@map("users")
+}
+
+// ============================================================================
+// Tenancy — Contabilidade (ator) + Empresa (tenant)
+// ============================================================================
+
+model Contabilidade {
+  id         String   @id @default(uuid()) @db.Uuid
+  nome       String
+  cnpj       String   @unique
+  clerkOrgId String?  @unique @map("clerk_org_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  empresas ContabilidadeEmpresa[]
+
+  @@map("contabilidades")
+}
+
+model Empresa {
+  id               String   @id @default(uuid()) @db.Uuid
+  // tenantId == id (mantido redundante para policies RLS uniformes em toda tabela de domínio)
+  tenantId         String   @unique @db.Uuid @map("tenant_id")
+  razaoSocial      String   @map("razao_social")
+  cnpj             String   @unique
+  regimeTributario String   @map("regime_tributario")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  contabilidades ContabilidadeEmpresa[]
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("empresas")
+}
+
+model ContabilidadeEmpresa {
+  contabilidadeId String   @db.Uuid @map("contabilidade_id")
+  empresaId       String   @db.Uuid @map("empresa_id")
+  ativo           Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  contabilidade Contabilidade @relation(fields: [contabilidadeId], references: [id])
+  empresa       Empresa       @relation(fields: [empresaId], references: [id])
+
+  @@id([contabilidadeId, empresaId])
+  @@index([empresaId])
+  @@map("contabilidade_empresas")
+}
+
+// ============================================================================
+// RBAC — User memberships em escopos diversos
+// ============================================================================
+
+model UserMembership {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  scopeType String   @map("scope_type")
+  scopeId   String?  @db.Uuid @map("scope_id")
+  role      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([scopeType, scopeId])
+  @@map("user_memberships")
+}
+
+// ============================================================================
+// Audit — imutável, particionado mensal
+// ============================================================================
+// NOTA: a tabela é criada como PARTITIONED em migration SQL raw.
+// Prisma não suporta nativamente declarative partitioning — aqui declaramos
+// a "forma" esperada do modelo para o Prisma Client, e a migration SQL
+// cria a tabela como PARTITION BY RANGE (created_at).
+
+model AuditLog {
+  id           String   @default(uuid()) @db.Uuid
+  tenantId     String?  @db.Uuid @map("tenant_id")
+  userId       String?  @db.Uuid @map("user_id")
+  action       String
+  resourceType String?  @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  diff         Json?
+  ip           String?
+  userAgent    String?  @map("user_agent")
+  result       String
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // PK composta exigida por PARTITION BY created_at
+  @@id([id, createdAt])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("audit_log")
+}
