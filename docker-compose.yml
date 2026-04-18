@@ -1,0 +1,60 @@
+# Docker Compose para ambiente de desenvolvimento local — Nexo Fiscal.
+# Postgres 16 com roles separadas para defesa em camadas do RLS (Plan 04).
+# pgAdmin opcional para inspeção manual.
+# NÃO usar em produção — credenciais fracas para facilitar dev.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexofiscal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD:-postgres_root_dev}
+      POSTGRES_DB: postgres
+      # Passwords para app_user e app_admin, lidos pelo init.sql via PSQL env
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD:-app_user_dev_pass}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-app_admin_dev_pass}
+      POSTGRES_DB_NAME: ${POSTGRES_DB_NAME:-nexofiscal_dev}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command:
+      - postgres
+      - -c
+      - log_statement=none
+      - -c
+      - log_min_messages=warning
+      - -c
+      - max_connections=100
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: nexofiscal-pgadmin
+    restart: unless-stopped
+    profiles: ["tools"]  # Só sobe com `docker compose --profile tools up -d`
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nexofiscal.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+    name: nexofiscal_postgres_data
+  pgadmin_data:
+    name: nexofiscal_pgadmin_data
