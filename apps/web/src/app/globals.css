@@ -1,0 +1,7 @@
+/* Nexo Fiscal — global styles.
+   Re-exporta os estilos do design system (@nexo/ui) que contém
+   @tailwind diretivas + CSS variables shadcn.
+*/
+@import '@nexo/ui/styles';
+
+/* Overrides específicos do web app podem ir aqui (se necessário) */
