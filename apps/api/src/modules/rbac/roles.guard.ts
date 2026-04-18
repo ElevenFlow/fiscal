@@ -1,34 +1,45 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+// biome-ignore lint/style/useImportType: NestJS DI exige valor runtime (reflection-based injection).
 import { Reflector } from '@nestjs/core';
+// biome-ignore lint/style/useImportType: NestJS DI exige valor runtime (reflection-based injection).
 import { PrismaService } from '../../db/prisma.service';
-import { getCurrentTenant } from '../../db/tenant-context';
+import { withTenantContext } from '../../db/with-tenant';
 import { ROLES_KEY, type Role } from './roles.decorator';
 
+interface AuthenticatedRequest {
+  auth?: {
+    userId: string; // DB user.id (setado pelo ClerkGuard — Plan 07)
+    contabilidadeId: string | null;
+    role: 'platform_admin' | 'tenant_user';
+  };
+}
+
 /**
- * RolesGuard — valida que o user tem @Roles(...) no escopo atual.
+ * RolesGuard — valida que o user tem ao menos UM dos `@Roles(...)` requeridos.
  *
- * PLACEHOLDER (Plan 05 wave 2): este guard implementa apenas o fluxo de
- * metadata + bypass para platform_admin. A query real contra `user_memberships`
- * fica intencionalmente fora deste plano porque:
- *   1. Clerk (Plan 07) populará `req.user` e `req.auth.memberships` — a query
- *      direta ao Postgres vira cache warming redundante.
- *   2. A query em user_memberships via app_user (NOBYPASSRLS) requer context
- *      de tenant especial para autorização cross-scope que ainda não existe.
+ * BLOCKER #1 fix (Plan 07):
+ *   A query em `user_memberships` é envolvida em
+ *   `withTenantContext({ tenantId: null, role: 'platform_admin', userId })`.
+ *   Sem esse wrap, a connection `app_user` (NOBYPASSRLS) bate em
+ *   FORCE ROW LEVEL SECURITY da tabela e retorna 0 linhas — toda rota
+ *   com `@Roles(...)` responderia 403 permanentemente.
  *
- * Plan 07 substitui este guard pela implementação real que lê de `req.user`
- * via Clerk middleware. Enquanto isso, este placeholder:
- *   - early-return em rotas sem @Roles()
- *   - platform_admin bypassa sempre
- *   - scope.role (do TenantContextMiddleware) é comparado com requiredRoles
- *     apenas para o 'admin' role — outros roles exigem Clerk.
+ * Fluxo:
+ *   1. Rota sem @Roles() → passa.
+ *   2. Rota @Roles('admin', ...) + req.auth.role === 'platform_admin' → passa.
+ *   3. Query memberships via identity-scope bypass → verifica se algum role
+ *      do user está em `requiredRoles`.
+ *   4. Caso nenhum match → 403 com mensagem descritiva (sem vazar metadados sensíveis).
  *
- * NOTA sobre query em user_memberships: o CODE PATH será ativado em Plan 07.
- * Exemplo futuro:
- *   const memberships = await this.prisma.$queryRaw<{ role: string }[]>`
- *     SELECT role FROM user_memberships
- *     WHERE user_id = ${scope.userId}::uuid AND scope_id = ${scopeId}::uuid
- *   `;
- * (ver Plan 07 para implementação completa com tratamento de RLS).
+ * Ordem de guards (app.module.ts): ClerkGuard → RolesGuard.
+ * ClerkGuard popula `req.auth`; este guard só confia em `req.auth`, não em
+ * AsyncLocalStorage (evita TOCTOU entre middleware e guard).
  */
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -36,47 +47,58 @@ export class RolesGuard implements CanActivate {
 
   constructor(
     private readonly reflector: Reflector,
-    // PrismaService injetado para compat com Plan 07 futuro; não usado no placeholder.
-    private readonly _prisma: PrismaService,
-  ) {
-    // referência silenciosa para evitar lint unused
-    void this._prisma;
-  }
+    private readonly prisma: PrismaService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredRoles = this.reflector.getAllAndOverride<Role[] | undefined>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (!requiredRoles || requiredRoles.length === 0) {
-      return true; // Rota sem @Roles() — tenant guard (quando aplicado) já validou auth básica
+    // Rota sem @Roles() — pulamos sem query ao DB (evita overhead em 99% das rotas).
+    if (!requiredRoles || requiredRoles.length === 0) return true;
+
+    const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const auth = req.auth;
+    if (!auth?.userId) {
+      throw new ForbiddenException('Cannot authorize: missing auth context');
     }
 
-    const scope = getCurrentTenant();
-    if (!scope || !scope.userId) {
-      throw new ForbiddenException('Cannot authorize: missing tenant scope');
-    }
-
-    // Admin bypass — se role 'admin' está na lista requerida E scope.role='platform_admin', ok.
-    // Este é o único path funcional no placeholder; Plan 07 liga os outros roles via Clerk.
-    if (requiredRoles.includes('admin') && scope.role === 'platform_admin') {
+    // Platform admin bypass — FOUND-04 trata `admin` como role de plataforma.
+    if (requiredRoles.includes('admin') && auth.role === 'platform_admin') {
       return true;
     }
 
-    // Placeholder: demais roles ainda não têm fonte de verdade (Clerk pendente — Plan 07).
-    // Em vez de consultar user_memberships agora (RLS + bypass-de-scope é complexo e
-    // será resolvido quando req.user existir), falhamos closed com mensagem clara.
-    this.logger.warn(
-      {
-        requiredRoles,
-        currentRole: scope.role,
-        userId: scope.userId,
-      },
-      'roles_placeholder_deny',
+    // BLOCKER #1 FIX: lookup em user_memberships precisa bypassar FORCE RLS.
+    // withTenantContext com role='platform_admin' seta SET LOCAL app.role='platform_admin',
+    // liberando a policy identity-scoped para ler as memberships do próprio user.
+    // Nunca exponha isso fora do context de RBAC (é bypass legítimo para AuthN/Z lookup).
+    const memberships = await withTenantContext(
+      this.prisma,
+      { tenantId: null, role: 'platform_admin', userId: auth.userId },
+      (tx) =>
+        tx.$queryRaw<{ role: string; scope_type: string; scope_id: string | null }[]>`
+          SELECT role, scope_type, scope_id
+          FROM user_memberships
+          WHERE user_id = ${auth.userId}::uuid
+        `,
     );
-    throw new ForbiddenException(
-      `RolesGuard placeholder: role check for [${requiredRoles.join(', ')}] requires Clerk integration (Plan 07). Current scope role: ${scope.role}.`,
-    );
+
+    const allowed = memberships.some((m) => requiredRoles.includes(m.role as Role));
+    if (!allowed) {
+      // Log structured para SIEM (não vaza role do user no response body).
+      this.logger.warn(
+        {
+          requiredRoles,
+          userId: auth.userId,
+          foundRoles: memberships.map((m) => m.role),
+        },
+        'roles_denied',
+      );
+      throw new ForbiddenException(`Required role(s): ${requiredRoles.join(', ')}. Access denied.`);
+    }
+
+    return true;
   }
 }
