@@ -66,10 +66,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   /* Números fiscais usam tabular-nums automaticamente */
-  .font-mono, .tabular {
+  .font-mono,
+  .tabular {
     font-variant-numeric: tabular-nums;
   }
 }

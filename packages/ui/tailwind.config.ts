@@ -82,9 +82,9 @@ const config: Config = {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       fontSize: {
-        // Tabular numbers for fiscal values
-        'fiscal-sm': ['0.875rem', { lineHeight: '1.25rem', fontFeatureSettings: '"tnum"' }],
-        'fiscal-base': ['1rem', { lineHeight: '1.5rem', fontFeatureSettings: '"tnum"' }],
+        // Tabular numbers for fiscal values (font-feature-settings aplicado via utility .tabular)
+        'fiscal-sm': ['0.875rem', { lineHeight: '1.25rem' }],
+        'fiscal-base': ['1rem', { lineHeight: '1.5rem' }],
       },
       borderRadius: {
         lg: 'var(--radius)',
