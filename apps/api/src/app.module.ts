@@ -8,6 +8,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { LgpdModule } from './modules/lgpd/lgpd.module';
 import { RolesGuard } from './modules/rbac/roles.guard';
 import { AuditInterceptor } from './modules/audit/audit.interceptor';
 import { loadEnv } from './config/env';
@@ -25,6 +26,7 @@ import { loadEnv } from './config/env';
     RbacModule,
     AuditModule,
     StorageModule, // S3Service + ObjectLockVerifier (FOUND-11)
+    LgpdModule, // Portal do titular (FOUND-12) — BLOCKER #2 Option A
     HealthModule,
   ],
   providers: [
