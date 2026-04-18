@@ -1,6 +1,7 @@
 'use client';
 
-import { useClerk, useUser } from '@clerk/nextjs';
+import { useMockRole, useMockUser, useSwitchProfile } from '@/lib/mock-auth';
+import type { Role } from '@/lib/mock-data';
 import {
   Button,
   DropdownMenu,
@@ -9,37 +10,38 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@nexo/ui';
-import { LogOut, Settings, User } from 'lucide-react';
-import Image from 'next/image';
+import { Check, LogOut, Settings, User, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 /**
- * Menu de usuário no header (FOUND-13, FOUND-03).
+ * Menu de usuário no header + seletor de perfil (MODO PROTÓTIPO).
  *
- * Integra com Clerk (Plan 07):
- *  - `useUser()` fornece nome/email/avatar do user autenticado.
- *  - `useClerk().signOut()` encerra sessão e redireciona para /entrar.
- *
- * Fallback: se não há user (antes de hidratação ou erro de rede), renderiza
- * placeholder "Usuário" — o layout já protege a rota, então este estado é breve.
+ * - `useMockUser()` fornece nome/email do usuário fake conforme perfil ativo.
+ * - `useSwitchProfile()` troca entre admin/contabilidade/empresa e persiste em
+ *   localStorage. O re-render derivado atualiza sidebar/dashboards.
+ * - "Sair" apenas redireciona para /entrar (não há sessão real).
  */
+
+const roleLabels: Record<Role, string> = {
+  admin: 'Administrador',
+  contabilidade: 'Contabilidade',
+  empresa: 'Empresa',
+};
+
 export function UserMenu() {
-  const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const user = useMockUser();
+  const role = useMockRole();
+  const switchProfile = useSwitchProfile();
   const router = useRouter();
 
-  const name = user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Usuário';
-  const email = user?.primaryEmailAddress?.emailAddress ?? '';
-  const avatarUrl = user?.imageUrl ?? null;
-  const initials = name
+  const initials = user.nome
     .split(' ')
     .map((w) => w[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
     router.push('/entrar');
   };
 
@@ -49,34 +51,35 @@ export function UserMenu() {
         <Button
           variant="ghost"
           className="flex items-center gap-2 px-2"
-          aria-label={`Menu do usuário ${name}`}
-          disabled={!isLoaded}
+          aria-label={`Menu do usuário ${user.nome}`}
         >
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt=""
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full object-cover"
-              unoptimized
-            />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-blue text-xs font-semibold text-white">
-              {initials}
-            </div>
-          )}
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-blue text-xs font-semibold text-white">
+            {initials}
+          </div>
           <div className="hidden flex-col items-start leading-none md:flex">
-            <span className="text-sm font-medium">{name}</span>
-            <span className="text-xs text-muted-foreground">{email}</span>
+            <span className="text-sm font-medium">{user.nome}</span>
+            <span className="text-xs text-muted-foreground">{roleLabels[role]}</span>
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-64">
         <div className="px-2 py-1.5 text-sm">
-          <div className="font-medium">{name}</div>
-          <div className="truncate text-xs text-muted-foreground">{email}</div>
+          <div className="font-medium">{user.nome}</div>
+          <div className="truncate text-xs text-muted-foreground">{user.email}</div>
         </div>
+        <DropdownMenuSeparator />
+
+        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Ver como
+        </div>
+        {(['admin', 'contabilidade', 'empresa'] as Role[]).map((r) => (
+          <DropdownMenuItem key={r} onClick={() => switchProfile(r)}>
+            <Users className="mr-2 h-4 w-4" />
+            <span className="flex-1">{roleLabels[r]}</span>
+            {role === r && <Check className="h-4 w-4 text-brand-blue" />}
+          </DropdownMenuItem>
+        ))}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <User className="mr-2 h-4 w-4" />
