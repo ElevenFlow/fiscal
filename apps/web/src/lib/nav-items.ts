@@ -7,6 +7,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingBag,
+  UserCog,
   Users,
   Warehouse,
 } from 'lucide-react';
@@ -66,6 +67,9 @@ export const navItems: NavSection[] = [
   {
     id: 'config',
     label: 'Configurações',
-    items: [{ id: 'config', label: 'Configurações', href: '/config', icon: Settings }],
+    items: [
+      { id: 'usuarios', label: 'Usuários', href: '/usuarios', icon: UserCog },
+      { id: 'config', label: 'Configurações', href: '/config', icon: Settings },
+    ],
   },
 ];
