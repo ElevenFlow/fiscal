@@ -1,5 +1,6 @@
 'use client';
 
+import { logoutAction } from '@/app/entrar/actions';
 import { useMockRole, useMockUser, useSwitchProfile } from '@/lib/mock-auth';
 import type { Role } from '@/lib/mock-data';
 import {
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@nexo/ui';
 import { Check, LogOut, Settings, User, Users } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useTransition } from 'react';
 
 /**
  * Menu de usuário no header + seletor de perfil (MODO PROTÓTIPO).
@@ -32,7 +33,7 @@ export function UserMenu() {
   const user = useMockUser();
   const role = useMockRole();
   const switchProfile = useSwitchProfile();
-  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const initials = user.nome
     .split(' ')
@@ -42,7 +43,9 @@ export function UserMenu() {
     .toUpperCase();
 
   const handleLogout = () => {
-    router.push('/entrar');
+    startTransition(() => {
+      void logoutAction();
+    });
   };
 
   return (
@@ -90,9 +93,13 @@ export function UserMenu() {
           Preferências
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="text-brand-danger">
+        <DropdownMenuItem
+          onClick={handleLogout}
+          disabled={isPending}
+          className="text-brand-danger"
+        >
           <LogOut className="mr-2 h-4 w-4" />
-          Sair
+          {isPending ? 'Saindo…' : 'Sair'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -2,36 +2,18 @@
 
 import { Button, Input } from '@nexo/ui';
 import { Quote, ShieldCheck } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import { useActionState } from 'react';
+import { type LoginState, loginAction } from './actions';
+
+const initialState: LoginState = { error: null };
 
 /**
- * Tela de login (MODO PROTÓTIPO — visual apenas).
- *
- * Split-screen:
- *  - Esquerda: painel azul com branding e depoimento.
- *  - Direita: card centralizado com email / senha / manter conectado.
- *
- * Submissão: apenas redireciona para `/` — nenhum backend envolvido. Esquecer
- * senha mostra toast/alert em dev mock.
+ * Tela de login — modo protótipo single-user.
+ * Credenciais validadas em Server Action contra env vars AUTH_EMAIL/AUTH_PASSWORD.
+ * Sucesso seta cookie assinado e redireciona para `/`.
  */
 export default function EntrarPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('rodrigo@oliveiratech.com.br');
-  const [senha, setSenha] = useState('••••••••');
-  const [manterConectado, setManterConectado] = useState(true);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    // Simula latência curta para sensação de "entrando…"
-    setTimeout(() => router.push('/'), 450);
-  };
-
-  const handleEsqueci = () => {
-    alert('Modo protótipo: funcionalidade mock. Em produção envia e-mail de recuperação.');
-  };
+  const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -79,61 +61,48 @@ export default function EntrarPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form action={formAction} className="space-y-5">
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-medium">
                 E-mail
               </label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
+                defaultValue=""
+                disabled={isPending}
               />
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label htmlFor="senha" className="text-sm font-medium">
-                  Senha
-                </label>
-                <button
-                  type="button"
-                  onClick={handleEsqueci}
-                  className="text-xs font-medium text-brand-blue hover:underline"
-                >
-                  Esqueci minha senha
-                </button>
-              </div>
+              <label htmlFor="senha" className="text-sm font-medium">
+                Senha
+              </label>
               <Input
                 id="senha"
+                name="senha"
                 type="password"
                 autoComplete="current-password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
                 required
+                disabled={isPending}
               />
             </div>
 
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={manterConectado}
-                onChange={(e) => setManterConectado(e.target.checked)}
-                className="h-4 w-4 rounded border-input text-brand-blue focus:ring-brand-blue"
-              />
-              <span>Manter conectado</span>
-            </label>
+            {state.error && (
+              <div
+                role="alert"
+                className="rounded-md border border-brand-danger/30 bg-brand-danger/10 p-3 text-sm text-brand-danger"
+              >
+                {state.error}
+              </div>
+            )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Entrando…' : 'Entrar'}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? 'Entrando…' : 'Entrar'}
             </Button>
-
-            <p className="text-center text-xs text-muted-foreground">
-              Modo protótipo — qualquer credencial entra no ambiente de demonstração.
-            </p>
           </form>
         </div>
       </main>
