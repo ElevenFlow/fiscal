@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm turbo run build --filter=@nexo/web",
-  "installCommand": "pnpm install --frozen-lockfile",
-  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- apps/web packages/ui packages/shared"
+  "installCommand": "pnpm install --frozen-lockfile"
 }

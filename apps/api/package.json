@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nest start --watch",
     "start:dev": "nest start --watch",
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "start": "node dist/main.js",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit",
