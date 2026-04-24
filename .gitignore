@@ -14,6 +14,7 @@ coverage/
 .vscode/
 .idea/
 *.tsbuildinfo
+.claude/
 
 # Secrets / credenciais fiscais (NUNCA commitar — risco criminal por fraude fiscal)
 *.pfx
