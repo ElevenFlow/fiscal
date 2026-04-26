@@ -1,14 +1,42 @@
 'use client';
 
 /**
- * Stub criado pelo Plan 02-09 — Plan 02-07 substituirá com QueryClientProvider real (TanStack Query).
+ * AppQueryProvider — wrapper TanStack Query 5.x para apps/web (Plan 02-07).
  *
- * O ClerkProvider em layout.tsx referencia AppQueryProvider para já deixar o ponto de extensão
- * pronto. Por ora, é um pass-through.
+ * Substitui o stub criado no Plan 02-09. Configurações:
+ *  - staleTime 30s: dados fiscais costumam mudar pouco; evita refetch agressivo entre re-mounts.
+ *  - refetchOnWindowFocus false: usuário trocando de aba não dispara N requests.
+ *  - retry 1: transient error tenta uma vez; 4xx propaga rapidamente.
+ *
+ * Mounted em apps/web/src/app/layout.tsx ABAIXO de <ClerkProvider>.
+ *
+ * Convenção de queryKeys: ['{resource}', filtersOrId?]
+ *  - ['clientes']                       lista padrão
+ *  - ['clientes', { page, search }]    lista com filtros
+ *  - ['cliente', id]                   detalhe
+ *  - ['certificados']                   lista
+ *  - ['series']                         lista
+ *  - ['empresas-minhas']                EmpresaSwitcher
  */
 
-import type { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState, type ReactNode } from 'react';
 
 export function AppQueryProvider({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+          mutations: {
+            retry: 0,
+          },
+        },
+      }),
+  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

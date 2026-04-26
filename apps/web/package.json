@@ -17,6 +17,7 @@
     "@nexo/shared": "workspace:*",
     "@nexo/ui": "workspace:*",
     "@sentry/nextjs": "10.50.0",
+    "@tanstack/react-query": "^5.62.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "lucide-react": "^0.468.0",
