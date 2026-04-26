@@ -31,6 +31,18 @@ export const REDACT_PATHS = [
   '*.certificate',
   'privateKey',
   '*.privateKey',
+  // Phase 2 Plan 02-04 — KMS envelope encryption
+  // Os bytes da DEK (clara ou cifrada) e do .pfx cifrado JAMAIS podem entrar
+  // em logs estruturados; mesmo a forma cifrada vaza estatística que ajuda
+  // criptanálise quando combinada com o encryption context.
+  'encryptedDek',
+  '*.encryptedDek',
+  'encryptedPfxBytes',
+  '*.encryptedPfxBytes',
+  'dekPlaintext',
+  '*.dekPlaintext',
+  'dekCiphered',
+  '*.dekCiphered',
 
   // Tokens e auth headers
   'token',
