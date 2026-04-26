@@ -25,6 +25,9 @@ import { SeriesModule } from './modules/series/series.module';
 // === Phase 2 Integrations (02-03) imports — DO NOT MOVE ===
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 // === End Phase 2 Integrations imports ===
+// === Phase 2 Queue (02-05) imports — DO NOT MOVE; consumido por 02-08 (lookup worker) também ===
+import { QueueModule } from './modules/queue/queue.module';
+// === End Phase 2 Queue imports ===
 import { HealthModule } from './modules/health/health.module';
 import { LgpdModule } from './modules/lgpd/lgpd.module';
 import { SentryModule } from './modules/observability/sentry.module';
@@ -67,6 +70,9 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     // === Phase 2 Integrations (02-03) — DO NOT MOVE ===
     IntegrationsModule,
     // === End Phase 2 Integrations ===
+    // === Phase 2 Queue (02-05) — DO NOT MOVE; consumido por 02-08 (lookup worker) também ===
+    QueueModule,
+    // === End Phase 2 Queue ===
   ],
   providers: [
     // Ordem CRÍTICA (Plan 07):

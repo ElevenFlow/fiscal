@@ -35,6 +35,25 @@ services:
       - -c
       - max_connections=100
 
+  # Redis 7 — backing store para BullMQ (Plan 02-05 cron alertas certificado +
+  # planos futuros: Phase 3 emissão NF-e, Phase 5 importação XML, Phase 6 jobs).
+  # Porta 6380 (não 6379 default) seguindo padrão de evitar colisão com Redis
+  # do sistema dev — alinha com Postgres em 5434.
+  redis:
+    image: redis:7-alpine
+    container_name: nexofiscal-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   pgadmin:
     image: dpage/pgadmin4:8
     container_name: nexofiscal-pgadmin
@@ -56,5 +75,7 @@ services:
 volumes:
   postgres_data:
     name: nexofiscal_postgres_data
+  redis_data:
+    name: nexofiscal_redis_data
   pgadmin_data:
     name: nexofiscal_pgadmin_data

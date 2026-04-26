@@ -26,6 +26,11 @@ export const EnvSchema = z.object({
   S3_BUCKET_FISCAL: z.string().optional(),
   S3_BUCKET_CERTS: z.string().optional(),
 
+  // BullMQ / Redis (Plan 02-05 — cron de alertas certificado A1)
+  // Em dev: redis://localhost:6380 (docker-compose). Em prod: ElastiCache (rediss://).
+  // Opcional — se ausente, scheduler/processor vira no-op com log warning (modo dev sem Redis).
+  REDIS_URL: z.string().url().optional(),
+
   // Observability
   SENTRY_DSN: z.string().optional(),
   SENTRY_ENVIRONMENT: z.string().default('development'),
