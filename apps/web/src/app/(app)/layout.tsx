@@ -1,16 +1,32 @@
+import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { Header } from '@/components/shell/header';
 import { Sidebar } from '@/components/shell/sidebar';
+import { getCurrentUser } from '@/lib/clerk-shim';
 import { MockAuthProvider } from '@/lib/mock-auth';
-import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Aplicação',
 };
 
-// MODO PROTÓTIPO: sem auth real. `MockAuthProvider` carrega o usuário fake a
-// partir de localStorage e alimenta o switcher de perfil no header.
-// Para restaurar Clerk, consultar git log 01-07.
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+/**
+ * Layout autenticado (Plan 02-09 — Clerk religado).
+ *
+ * Defesa em profundidade sobre o middleware:
+ *  - Middleware Clerk já bloqueia rotas /app(.*) sem JWT válido.
+ *  - Aqui, fazemos um SECOND check via `getCurrentUser()` (clerk-shim) que
+ *    cobre Clerk default + cookie HMAC fallback (USE_PROTOTYPE_AUTH=true).
+ *  - Sem userId → redirect /entrar.
+ *
+ * MockAuthProvider permanece como camada de protótipo de RBAC visual ("Ver como…")
+ * até Phase 2 plugar publicMetadata.role real do Clerk.
+ */
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const me = await getCurrentUser();
+  if (!me.userId) {
+    redirect('/entrar');
+  }
+
   return (
     <MockAuthProvider>
       <div className="flex min-h-screen bg-background">

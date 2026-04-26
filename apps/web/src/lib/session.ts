@@ -2,8 +2,15 @@
  * Assinatura HMAC-SHA256 de cookies de sessão via Web Crypto.
  *
  * Compatível com Edge runtime (middleware) e Node runtime (Server Actions).
- * Modo protótipo: single-user, credenciais em env var. Quando restaurar Clerk,
- * substituir este módulo pela verificação de JWT do Clerk.
+ *
+ * @fallback FALLBACK opt-in via `USE_PROTOTYPE_AUTH=true` — Plan 02-09 religou
+ *           Clerk como default. Mantido para emergência caso Clerk fique
+ *           indisponível.
+ * @see docs/CLERK_SETUP.md seção 10 ("Rollback para modo protótipo").
+ *
+ * Único consumidor neste plan: `apps/web/src/lib/clerk-shim.ts`, que importa
+ * dinamicamente quando a flag está ativa. O middleware Clerk default NÃO
+ * consulta este módulo.
  */
 
 export const SESSION_COOKIE_NAME = 'nexo_session';
