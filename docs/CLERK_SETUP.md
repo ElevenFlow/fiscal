@@ -1,4 +1,9 @@
-# Clerk — Setup Guide (Plan 01-07)
+# Clerk — Setup Guide (Plan 01-07 / Plan 02-09 REATIVADO)
+
+> **Status (Phase 2 Plan 09):** Clerk Organizations REATIVADO após período de
+> protótipo single-user (commit `93094ee` removeu, este plan religou). Cookie
+> HMAC permanece como **fallback opt-in** via `USE_PROTOTYPE_AUTH=true`.
+> Ver seção 10 abaixo para o procedimento de rollback de emergência.
 
 Runbook para provisionar um app Clerk de desenvolvimento e conectar ao Nexo Fiscal.
 **Execução humana**: Claude escreveu todo o código; você cria o app Clerk e injeta as chaves.
@@ -168,3 +173,71 @@ Admin Plataforma (Nexo `admin` role) **não** é membro de nenhuma Organization 
 - Configure domínios customizados (`accounts.nexofiscal.com.br`) para evitar
   URL `clerk.accounts.dev` no fluxo de e-mail (T-07-08 mitigation).
 - Habilite **Bot protection** (Clerk → Security) — incluso no tier free.
+
+---
+
+## 10. Rollback para modo protótipo (emergência) — Plan 02-09
+
+Caso o Clerk Dashboard fique indisponível e for necessário restaurar login durante
+um incidente, há um **fallback opt-in via cookie HMAC** preservado do período
+protótipo single-user (commit `8a1061b`). Use **somente em emergência** — não
+para desenvolvimento contínuo.
+
+### O que está disponível
+
+Sem nenhum swap manual, ativar a flag faz `apps/web/src/lib/clerk-shim.ts`
+(`getCurrentUser()`) consultar o cookie HMAC em vez do `auth()` do Clerk:
+
+```bash
+# .env.local — emergência
+USE_PROTOTYPE_AUTH=true
+AUTH_SECRET=<gerar 32+ chars aleatórios>
+AUTH_EMAIL=admin@empresa.com
+AUTH_PASSWORD=<senha forte>
+```
+
+Layouts protegidos (`apps/web/src/app/(app)/layout.tsx`) usam `getCurrentUser()` —
+portanto passam a respeitar o cookie HMAC automaticamente quando a flag está ativa.
+
+### O que requer swap manual (rollback completo)
+
+O `apps/web/middleware.ts` default é `clerkMiddleware`. Se Clerk estiver totalmente
+fora (DNS/SDK off), o middleware Clerk retorna 500 antes do shim atuar. Nesse caso:
+
+1. Recuperar `apps/web/middleware.ts` do commit `8a1061b` (versão cookie HMAC):
+
+   ```bash
+   git show 8a1061b:apps/web/middleware.ts > apps/web/middleware.ts
+   ```
+
+2. Recuperar `apps/web/src/app/entrar/page.tsx` + `actions.ts` do mesmo commit
+   (gate de login HMAC server action):
+
+   ```bash
+   git show 8a1061b:apps/web/src/app/entrar/page.tsx > apps/web/src/app/entrar/page.tsx
+   git show 8a1061b:apps/web/src/app/entrar/actions.ts > apps/web/src/app/entrar/actions.ts
+   ```
+
+3. Remover (ou renomear) `apps/web/src/app/(public)/entrar/[[...sign-in]]/page.tsx`
+   para liberar a rota `/entrar` para o gate legado.
+
+4. `pnpm uninstall @clerk/nextjs @clerk/localizations svix` (opcional — só se
+   quiser eliminar a dependência completamente).
+
+5. `pnpm dev` — app passa a aceitar APENAS o user em `AUTH_EMAIL`/`AUTH_PASSWORD`.
+
+### Restaurar Clerk após emergência
+
+1. Reverter os swaps manuais (`git checkout HEAD -- apps/web/middleware.ts apps/web/src/app/(public)/`).
+2. Setar `USE_PROTOTYPE_AUTH=false` no `.env.local`.
+3. `pnpm install` (caso tenha desinstalado deps).
+4. Validar fluxos do Task 5 do Plan 02-09 antes de remover o gate HMAC do incidente.
+
+### Por que manter o fallback?
+
+- Recuperação rápida de incidente sem alterações de infra (DNS, certificados).
+- Smoke test isolado em LGPD/audit endpoints sem precisar de Clerk dev provisionado.
+- Compatibilidade reversa para scripts internos que esperavam header simples.
+
+**Nunca em produção sem incidente declarado.** O cookie HMAC é single-user por
+design e não tem MFA, rate limit, ou revogação centralizada.

@@ -1,45 +1,45 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
-import { SESSION_COOKIE_NAME, getAuthSecret, verifySession } from '@/lib/session';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 /**
- * Middleware de auth — modo protótipo single-user.
+ * Middleware Clerk (Plan 02-09 — religado após período protótipo single-user).
  *
- * Regras:
- *  - `/entrar`, `/privacidade` e `/api/auth/*` são públicos.
- *  - Qualquer outra rota exige cookie de sessão HMAC válido; caso contrário
- *    redireciona para `/entrar?next=<path>`.
- *  - Usuário já autenticado acessando `/entrar` é mandado para `/`.
- *
- * Quando restaurar Clerk, trocar este arquivo pelo `clerkMiddleware` original
- * (ver git log 01-07).
+ * Estratégia:
+ *  - Default: clerkMiddleware com allowlist de rotas públicas e protect() em rotas privadas.
+ *  - Webhook /api/webhooks/* permanece público (svix valida assinatura no handler).
+ *  - O cookie HMAC anterior (lib/session.ts) fica como FALLBACK opt-in via `USE_PROTOTYPE_AUTH=true`,
+ *    mas NÃO é consumido por este middleware default. Para reativar o gate HMAC em emergência,
+ *    consultar `docs/CLERK_SETUP.md` seção 10 ("Rollback para modo protótipo").
  */
 
-const PUBLIC_PATHS = ['/entrar', '/privacidade', '/app/privacidade'];
+const isPublic = createRouteMatcher([
+  '/',
+  '/entrar(.*)',
+  '/cadastrar(.*)',
+  '/recuperar-senha(.*)',
+  '/privacidade(.*)',
+  '/api/webhooks(.*)',
+]);
 
-function isPublicPath(pathname: string): boolean {
-  if (pathname.startsWith('/api/auth/')) return true;
-  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-}
+const isProtected = createRouteMatcher([
+  '/app(.*)',
+  '/api/clientes(.*)',
+  '/api/fornecedores(.*)',
+  '/api/produtos(.*)',
+  '/api/servicos(.*)',
+  '/api/empresas(.*)',
+  '/api/contabilidades(.*)',
+  '/api/certificados(.*)',
+  '/api/series(.*)',
+  '/api/integrations(.*)',
+  '/api/lookup(.*)',
+  '/api/lgpd(.*)',
+]);
 
-export async function middleware(req: NextRequest) {
-  const pathname = req.nextUrl.pathname;
-  const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const session = token ? await verifySession(token, getAuthSecret()) : null;
-
-  // Autenticado tentando /entrar → manda para home
-  if (session && pathname === '/entrar') {
-    return NextResponse.redirect(new URL('/', req.url));
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtected(req) && !isPublic(req)) {
+    await auth.protect();
   }
-
-  // Não autenticado tentando rota protegida → manda para /entrar
-  if (!session && !isPublicPath(pathname)) {
-    const url = new URL('/entrar', req.url);
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: [

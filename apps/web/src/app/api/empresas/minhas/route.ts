@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
+import { ApiError, fetchApi } from '@/lib/api-client';
 
 /**
- * MODO PROTÓTIPO: retorna lista mock de empresas visíveis ao usuário.
+ * Route Handler: GET /api/empresas/minhas (Plan 02-09).
  *
- * No modo real (ver git log 01-07/01-09), o handler proxy para apps/api
- * GET /api/empresas/minhas usando JWT Clerk. Aqui só devolve as empresas
- * do fixture para manter compatibilidade com `empresa-switcher.tsx` enquanto
- * este componente é migrado para consumir `mock-data.ts` direto.
+ * Em modo Clerk (default): proxia para apps/api `/api/empresas/minhas` injetando
+ * Bearer JWT via fetchApi → apps/api filtra por contabilidade do user autenticado.
+ *
+ * Wave 1: o endpoint upstream em apps/api ainda não existe (Plan 02-02 entrega).
+ * Quando 404/erro, fallback para fixture mock para EmpresaSwitcher continuar
+ * funcionando até Phase 2 conectar.
  */
 
 export const runtime = 'nodejs';
@@ -19,26 +22,27 @@ export interface EmpresaDTO {
   ambiente: 'producao' | 'homologacao';
 }
 
+const fallbackEmpresas: EmpresaDTO[] = [
+  { id: 'e-1', razaoSocial: 'Oliveira Tech Soluções LTDA', cnpj: '12.345.678/0001-90', ambiente: 'producao' },
+  { id: 'e-2', razaoSocial: 'Clínica Vida Integral ME', cnpj: '23.456.789/0001-12', ambiente: 'producao' },
+  { id: 'e-3', razaoSocial: 'Solar Engenharia LTDA', cnpj: '34.567.890/0001-23', ambiente: 'homologacao' },
+];
+
 export async function GET(): Promise<NextResponse> {
-  const empresas: EmpresaDTO[] = [
-    {
-      id: 'e-1',
-      razaoSocial: 'Oliveira Tech Soluções LTDA',
-      cnpj: '12.345.678/0001-90',
-      ambiente: 'producao',
-    },
-    {
-      id: 'e-2',
-      razaoSocial: 'Clínica Vida Integral ME',
-      cnpj: '23.456.789/0001-12',
-      ambiente: 'producao',
-    },
-    {
-      id: 'e-3',
-      razaoSocial: 'Solar Engenharia LTDA',
-      cnpj: '34.567.890/0001-23',
-      ambiente: 'homologacao',
-    },
-  ];
-  return NextResponse.json({ empresas }, { headers: { 'Cache-Control': 'no-store' } });
+  try {
+    const data = await fetchApi<{ empresas: EmpresaDTO[] }>('/api/empresas/minhas');
+    return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
+  } catch (err) {
+    // Plan 02-02 entregará o endpoint apps/api; até lá, mock mantém UI viva.
+    if (err instanceof ApiError && (err.status === 404 || err.status === 401 || err.status === 500)) {
+      return NextResponse.json(
+        { empresas: fallbackEmpresas },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+    return NextResponse.json(
+      { empresas: fallbackEmpresas },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
 }

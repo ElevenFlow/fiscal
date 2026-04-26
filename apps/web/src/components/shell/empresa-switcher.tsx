@@ -1,6 +1,5 @@
 'use client';
 
-import { mockEmpresas } from '@/lib/mock-data';
 import {
   Badge,
   Button,
@@ -12,18 +11,50 @@ import {
   cn,
 } from '@nexo/ui';
 import { Building2, Check, ChevronsUpDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { mockEmpresas } from '@/lib/mock-data';
 
 /**
- * Seletor de empresa ativa no header.
+ * Seletor de empresa ativa no header (Plan 02-09).
  *
- * MODO PROTÓTIPO: consome `mockEmpresas` diretamente, sem fetch. O estado de
- * "empresa selecionada" é apenas client state — não persiste no mock-auth
- * ainda (o contexto só controla perfil).
+ * Com Clerk religado, este componente faz fetch para `/api/empresas/minhas` (Route
+ * Handler proxy → apps/api). Em fallback (endpoint 404 ou rede off), usa
+ * `mockEmpresas` para não quebrar a UI durante a Wave 1.
+ *
+ * Phase 2 CAD-02 implementa o endpoint real (depende de Plan 02-02).
  */
+
+interface EmpresaItem {
+  id: string;
+  razaoSocial: string;
+  cnpj: string;
+  ambiente: 'producao' | 'homologacao';
+}
+
 export function EmpresaSwitcher() {
+  const [empresas, setEmpresas] = useState<EmpresaItem[]>(mockEmpresas);
   const [selectedId, setSelectedId] = useState<string>(mockEmpresas[0]?.id ?? '');
-  const selected = mockEmpresas.find((e) => e.id === selectedId) ?? mockEmpresas[0];
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/empresas/minhas', { credentials: 'include' })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const json = (await r.json()) as { empresas?: EmpresaItem[] };
+        if (!cancelled && json.empresas?.length) {
+          setEmpresas(json.empresas);
+          setSelectedId((prev) => prev || (json.empresas?.[0]?.id ?? ''));
+        }
+      })
+      .catch(() => {
+        // Silencioso — fallback é mockEmpresas (já no state inicial)
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selected = empresas.find((e) => e.id === selectedId) ?? empresas[0];
 
   if (!selected) {
     return (
@@ -51,7 +82,7 @@ export function EmpresaSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72">
-        {mockEmpresas.map((empresa) => (
+        {empresas.map((empresa) => (
           <DropdownMenuItem
             key={empresa.id}
             onClick={() => setSelectedId(empresa.id)}
