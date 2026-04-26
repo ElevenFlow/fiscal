@@ -144,4 +144,22 @@ export class ClientesService {
     await this.findOne(id);
     await this.prisma.cliente.update({ where: { id }, data: { ativo: false } });
   }
+
+  /**
+   * findByCpfCnpj — verificação de duplicidade por tenant (Plan 02-03 / CAD-09).
+   *
+   * Retorna o cliente se já existir no tenant atual com o cpfCnpj informado.
+   * Sem tenant ativo, retorna null (não vaza dados cross-tenant — T-02-03-07).
+   *
+   * Usado pelo endpoint GET /api/clientes/check-duplicate antes do POST para
+   * dar feedback em tempo real na UI (alerta de duplicidade — CAD-09).
+   */
+  async findByCpfCnpj(cpfCnpj: string): Promise<{ id: string; nome: string } | null> {
+    const { tenantId } = requireTenant();
+    if (!tenantId) return null;
+    return this.prisma.cliente.findUnique({
+      where: { tenantId_cpfCnpj: { tenantId, cpfCnpj } },
+      select: { id: true, nome: true },
+    });
+  }
 }

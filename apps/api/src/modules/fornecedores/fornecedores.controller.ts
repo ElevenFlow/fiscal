@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -16,6 +17,8 @@ import {
   FornecedorListQuerySchema,
   type FornecedorUpdateInput,
   FornecedorUpdateSchema,
+  isValidCnpj,
+  isValidCpf,
 } from '@nexo/shared';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe';
 import { Auditable } from '../audit/audit.interceptor';
@@ -59,6 +62,33 @@ export class FornecedoresController {
     @Body(new ZodValidationPipe(FornecedorCreateSchema)) dto: FornecedorCreateInput,
   ): Promise<unknown> {
     return this.service.create(dto);
+  }
+
+  /**
+   * Verifica se um CPF/CNPJ já existe em fornecedor do tenant atual (CAD-09).
+   * Declarado ANTES de `:id` para precedência de routing.
+   */
+  @Get('check-duplicate')
+  async checkDuplicate(
+    @Query('cpfCnpj') cpfCnpj: string | undefined,
+  ): Promise<{ exists: boolean; fornecedor?: { id: string; razaoSocial: string } }> {
+    if (!cpfCnpj) {
+      throw new BadRequestException({
+        code: 'MISSING_PARAM',
+        message: 'cpfCnpj é obrigatório',
+      });
+    }
+    const sanitized = cpfCnpj.replace(/\D/g, '');
+    const isValid =
+      sanitized.length === 11 ? isValidCpf(sanitized) : sanitized.length === 14 ? isValidCnpj(sanitized) : false;
+    if (!isValid) {
+      throw new BadRequestException({
+        code: 'INVALID_CPF_CNPJ',
+        message: 'CPF/CNPJ inválido',
+      });
+    }
+    const existing = await this.service.findByCpfCnpj(sanitized);
+    return existing ? { exists: true, fornecedor: existing } : { exists: false };
   }
 
   @Get(':id')

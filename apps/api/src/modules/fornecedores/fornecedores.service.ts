@@ -132,4 +132,18 @@ export class FornecedoresService {
     await this.findOne(id);
     await this.prisma.fornecedor.update({ where: { id }, data: { ativo: false } });
   }
+
+  /**
+   * findByCpfCnpj — verificação de duplicidade por tenant (Plan 02-03 / CAD-09).
+   *
+   * Mesmo padrão do ClientesService: sem tenant ativo retorna null (T-02-03-07).
+   */
+  async findByCpfCnpj(cpfCnpj: string): Promise<{ id: string; razaoSocial: string } | null> {
+    const { tenantId } = requireTenant();
+    if (!tenantId) return null;
+    return this.prisma.fornecedor.findUnique({
+      where: { tenantId_cpfCnpj: { tenantId, cpfCnpj } },
+      select: { id: true, razaoSocial: true },
+    });
+  }
 }

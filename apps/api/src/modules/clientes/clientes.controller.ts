@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -16,6 +17,8 @@ import {
   ClienteListQuerySchema,
   type ClienteUpdateInput,
   ClienteUpdateSchema,
+  isValidCnpj,
+  isValidCpf,
 } from '@nexo/shared';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe';
 import { Auditable } from '../audit/audit.interceptor';
@@ -67,6 +70,38 @@ export class ClientesController {
     @Body(new ZodValidationPipe(ClienteCreateSchema)) dto: ClienteCreateInput,
   ): Promise<unknown> {
     return this.service.create(dto);
+  }
+
+  /**
+   * Verifica se um CPF/CNPJ já existe no tenant atual (CAD-09).
+   *
+   * IMPORTANTE: declarado ANTES de `:id` para precedência de routing — sem isso,
+   * NestJS interpretaria 'check-duplicate' como id no GET /:id.
+   *
+   * Validação dígito-verificador antes de consultar DB (defesa contra enumeração
+   * via inputs aleatórios — T-02-03-07).
+   */
+  @Get('check-duplicate')
+  async checkDuplicate(
+    @Query('cpfCnpj') cpfCnpj: string | undefined,
+  ): Promise<{ exists: boolean; cliente?: { id: string; nome: string } }> {
+    if (!cpfCnpj) {
+      throw new BadRequestException({
+        code: 'MISSING_PARAM',
+        message: 'cpfCnpj é obrigatório',
+      });
+    }
+    const sanitized = cpfCnpj.replace(/\D/g, '');
+    const isValid =
+      sanitized.length === 11 ? isValidCpf(sanitized) : sanitized.length === 14 ? isValidCnpj(sanitized) : false;
+    if (!isValid) {
+      throw new BadRequestException({
+        code: 'INVALID_CPF_CNPJ',
+        message: 'CPF/CNPJ inválido',
+      });
+    }
+    const existing = await this.service.findByCpfCnpj(sanitized);
+    return existing ? { exists: true, cliente: existing } : { exists: false };
   }
 
   @Get(':id')
