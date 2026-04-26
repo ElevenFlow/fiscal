@@ -21,3 +21,9 @@ coverage/
 *.key
 *.pem
 *.p12
+
+# Exceção: fixtures auto-assinados de teste (Phase 2 Plan 02-04 PfxParser suite).
+# São certs auto-assinados com senha publicamente documentada em pfx-parser.spec.ts;
+# não contêm segredo real. Reside SOMENTE em apps/api/tests/fixtures/.
+!apps/api/tests/fixtures/*.pfx
+!apps/api/tests/fixtures/*.p12
