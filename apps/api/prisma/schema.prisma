@@ -50,22 +50,285 @@ model Contabilidade {
 model Empresa {
   id               String   @id @default(uuid()) @db.Uuid
   // tenantId == id (mantido redundante para policies RLS uniformes em toda tabela de domínio)
-  tenantId         String   @unique @db.Uuid @map("tenant_id")
+  tenantId         String   @unique @map("tenant_id") @db.Uuid
   razaoSocial      String   @map("razao_social")
+  nomeFantasia     String?  @map("nome_fantasia")
   cnpj             String   @unique
+  ie               String?
+  im               String?
+  cnae             String?  @db.VarChar(10)
   regimeTributario String   @map("regime_tributario")
+  endereco         Json? // { logradouro, numero, complemento, bairro, cep, cidade, uf }
+  contatos         Json? // { email, telefone, whatsapp, responsavel }
+  ativo            Boolean  @default(true)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  contabilidades ContabilidadeEmpresa[]
+  contabilidades       ContabilidadeEmpresa[]
+  clientes             Cliente[]
+  fornecedores         Fornecedor[]
+  produtos             Produto[]
+  servicos             Servico[]
+  certificadosDigitais CertificadoDigital[]
+  seriesFiscais        SerieFiscal[]
 
   @@index([tenantId, createdAt(sort: Desc)])
   @@map("empresas")
 }
 
+// ============================================================================
+// Cadastros (Phase 2)
+// ============================================================================
+
+model Cliente {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  tipoPessoa       String   @map("tipo_pessoa") // 'fisica' | 'juridica'
+  cpfCnpj          String   @map("cpf_cnpj")
+  nome             String
+  nomeFantasia     String?  @map("nome_fantasia")
+  inscricaoEst     String?  @map("inscricao_est")
+  inscricaoMun     String?  @map("inscricao_mun")
+  contribuinteIcms String?  @map("contribuinte_icms") // 'sim' | 'nao' | 'isento'
+  endereco         Json // { logradouro, numero, complemento, bairro, cep, cidade, uf }
+  email            String?
+  telefone         String?
+  observacoes      String?
+  ativo            Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  empresa Empresa @relation(fields: [tenantId], references: [tenantId])
+
+  @@unique([tenantId, cpfCnpj])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, nome])
+  @@map("clientes")
+}
+
+model Fornecedor {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  cpfCnpj          String   @map("cpf_cnpj")
+  razaoSocial      String   @map("razao_social")
+  nomeFantasia     String?  @map("nome_fantasia")
+  inscricaoEst     String?  @map("inscricao_est")
+  endereco         Json
+  email            String?
+  telefone         String?
+  contatoComercial String?  @map("contato_comercial")
+  condicoesPadrao  Json?    @map("condicoes_padrao")
+  ativo            Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  empresa Empresa @relation(fields: [tenantId], references: [tenantId])
+
+  @@unique([tenantId, cpfCnpj])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("fornecedores")
+}
+
+model Produto {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  codigo           String // SKU interno
+  descricao        String
+  ncm              String   @db.VarChar(8)
+  cest             String?  @db.VarChar(7)
+  cfopPadrao       String?  @map("cfop_padrao") @db.VarChar(4)
+  cstIcms          String?  @map("cst_icms") @db.VarChar(3)
+  csosn            String?  @db.VarChar(3)
+  origemMercadoria Int      @default(0) @map("origem_mercadoria") // 0..8
+  unidade          String   @db.VarChar(6) // 'UN', 'KG', 'PC'
+  peso             Decimal? @db.Decimal(10, 3)
+  categoria        String?
+  precoCusto       Decimal? @map("preco_custo") @db.Decimal(15, 4)
+  margem           Decimal? @db.Decimal(5, 2)
+  precoVenda       Decimal  @map("preco_venda") @db.Decimal(15, 4)
+  aliquotaIcms     Decimal? @map("aliquota_icms") @db.Decimal(5, 2)
+  aliquotaIpi      Decimal? @map("aliquota_ipi") @db.Decimal(5, 2)
+  aliquotaPis      Decimal? @map("aliquota_pis") @db.Decimal(5, 2)
+  aliquotaCofins   Decimal? @map("aliquota_cofins") @db.Decimal(5, 2)
+  estoqueInicial   Decimal? @map("estoque_inicial") @db.Decimal(15, 3)
+  estoqueMinimo    Decimal? @map("estoque_minimo") @db.Decimal(15, 3)
+  estoqueMaximo    Decimal? @map("estoque_maximo") @db.Decimal(15, 3)
+  ativo            Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  empresa Empresa @relation(fields: [tenantId], references: [tenantId])
+
+  @@unique([tenantId, codigo])
+  @@index([tenantId, ncm])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("produtos")
+}
+
+model Servico {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  codigoInterno   String   @map("codigo_interno")
+  descricao       String
+  codigoMunicipal String   @map("codigo_municipal") // LC 116/2003
+  cnae            String?  @db.VarChar(10)
+  precoPadrao     Decimal  @map("preco_padrao") @db.Decimal(15, 4)
+  aliquotaIss     Decimal  @map("aliquota_iss") @db.Decimal(5, 2)
+  retencaoIr      Decimal? @map("retencao_ir") @db.Decimal(5, 2)
+  retencaoInss    Decimal? @map("retencao_inss") @db.Decimal(5, 2)
+  retencaoPis     Decimal? @map("retencao_pis") @db.Decimal(5, 2)
+  retencaoCofins  Decimal? @map("retencao_cofins") @db.Decimal(5, 2)
+  retencaoCsll    Decimal? @map("retencao_csll") @db.Decimal(5, 2)
+  ativo           Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  empresa Empresa @relation(fields: [tenantId], references: [tenantId])
+
+  @@unique([tenantId, codigoInterno])
+  @@index([tenantId, codigoMunicipal])
+  @@map("servicos")
+}
+
+// ============================================================================
+// Certificado Digital A1 (Phase 2)
+// ============================================================================
+
+model CertificadoDigital {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  s3Key           String   @map("s3_key") // chave do .pfx cifrado em S3
+  s3VersionId     String?  @map("s3_version_id")
+  encryptedDek    Bytes    @map("encrypted_dek") // DEK cifrada pela CMK KMS
+  kmsKeyId        String   @map("kms_key_id") // alias/id da CMK que cifrou a DEK
+  cn              String   @map("cn") // CommonName extraído do .pfx
+  cnpjCertificado String   @map("cnpj_certificado")
+  fingerprint     String   @db.VarChar(64) // SHA-256 hex
+  notBefore       DateTime @map("not_before") @db.Timestamptz(6)
+  notAfter        DateTime @map("not_after") @db.Timestamptz(6)
+  ativo           Boolean  @default(true)
+  uploadedById    String?  @map("uploaded_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  empresa Empresa             @relation(fields: [tenantId], references: [tenantId])
+  alertas AlertaCertificado[]
+
+  @@index([tenantId, ativo])
+  @@index([tenantId, notAfter])
+  @@map("certificados_digitais")
+}
+
+model AlertaCertificado {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  certificadoId String    @map("certificado_id") @db.Uuid
+  tier          String // 'D-60' | 'D-30' | 'D-15' | 'D-7' | 'D-0'
+  severity      String // 'info' | 'warning' | 'critical' | 'blocking'
+  diasRestantes Int       @map("dias_restantes")
+  geradoEm      DateTime  @default(now()) @map("gerado_em") @db.Timestamptz(6)
+  resolvido     Boolean   @default(false)
+  resolvidoEm   DateTime? @map("resolvido_em") @db.Timestamptz(6)
+
+  certificado CertificadoDigital @relation(fields: [certificadoId], references: [id])
+
+  @@unique([certificadoId, tier]) // dedup: 1 alerta por tier por cert (idempotência cron)
+  @@index([tenantId, resolvido])
+  @@index([tenantId, geradoEm(sort: Desc)])
+  @@map("alertas_certificado")
+}
+
+// ============================================================================
+// Séries Fiscais (Phase 2)
+// ============================================================================
+
+model SerieFiscal {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  empresaId     String   @map("empresa_id") @db.Uuid
+  modelo        String // 'NFE_55' | 'NFSE'
+  serie         Int
+  proximoNumero BigInt   @default(1) @map("proximo_numero")
+  ambiente      String // 'HOMOLOGACAO' | 'PRODUCAO'
+  ativa         Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  empresa Empresa @relation(fields: [tenantId], references: [tenantId])
+
+  @@unique([empresaId, modelo, serie])
+  @@index([tenantId, ativa])
+  @@map("series_fiscais")
+}
+
+// ============================================================================
+// Caches (BrasilAPI CNPJ + ViaCEP)
+// ============================================================================
+
+model CnpjCache {
+  cnpj      String   @id // chave global; cache compartilhado entre tenants
+  payload   Json
+  fetchedAt DateTime @default(now()) @map("fetched_at") @db.Timestamptz(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@index([expiresAt])
+  @@map("cnpj_cache")
+}
+
+model CepCache {
+  cep       String   @id // 8 dígitos sem hífen
+  payload   Json
+  fetchedAt DateTime @default(now()) @map("fetched_at") @db.Timestamptz(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@index([expiresAt])
+  @@map("cep_cache")
+}
+
+// ============================================================================
+// Tabelas Lookup (catálogo global, sem RLS)
+// ============================================================================
+
+model NCM {
+  codigo       String    @id @db.VarChar(8)
+  descricao    String
+  vigenteAte   DateTime? @map("vigente_ate")
+  atualizadoEm DateTime  @default(now()) @map("atualizado_em")
+
+  @@index([descricao])
+  @@map("ncm")
+}
+
+model CEST {
+  codigo         String   @id @db.VarChar(7)
+  descricao      String
+  ncmRelacionado String?  @map("ncm_relacionado")
+  atualizadoEm   DateTime @default(now()) @map("atualizado_em")
+
+  @@map("cest")
+}
+
+model CFOP {
+  codigo       String   @id @db.VarChar(4)
+  descricao    String
+  tipo         String // 'entrada' | 'saida'
+  atualizadoEm DateTime @default(now()) @map("atualizado_em")
+
+  @@index([tipo])
+  @@map("cfop")
+}
+
+model LC116 {
+  codigo       String   @id @db.VarChar(10) // ex: '1.01', '14.05'
+  descricao    String
+  atualizadoEm DateTime @default(now()) @map("atualizado_em")
+
+  @@map("lc116")
+}
+
 model ContabilidadeEmpresa {
-  contabilidadeId String   @db.Uuid @map("contabilidade_id")
-  empresaId       String   @db.Uuid @map("empresa_id")
+  contabilidadeId String   @map("contabilidade_id") @db.Uuid
+  empresaId       String   @map("empresa_id") @db.Uuid
   ativo           Boolean  @default(true)
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -83,9 +346,9 @@ model ContabilidadeEmpresa {
 
 model UserMembership {
   id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid @map("user_id")
+  userId    String   @map("user_id") @db.Uuid
   scopeType String   @map("scope_type")
-  scopeId   String?  @db.Uuid @map("scope_id")
+  scopeId   String?  @map("scope_id") @db.Uuid
   role      String
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -106,8 +369,8 @@ model UserMembership {
 
 model AuditLog {
   id           String   @default(uuid()) @db.Uuid
-  tenantId     String?  @db.Uuid @map("tenant_id")
-  userId       String?  @db.Uuid @map("user_id")
+  tenantId     String?  @map("tenant_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
   action       String
   resourceType String?  @map("resource_type")
   resourceId   String?  @map("resource_id")
