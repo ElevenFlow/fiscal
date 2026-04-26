@@ -32,6 +32,17 @@ async function main(): Promise<void> {
     await prisma.$executeRawUnsafe('TRUNCATE TABLE audit_log CASCADE');
     await prisma.userMembership.deleteMany();
     await prisma.contabilidadeEmpresa.deleteMany();
+
+    // Phase 2 fixtures FK->empresas via tenant_id — limpa em ordem reversa antes
+    // de tocar empresas (FK violations bloqueiam empresa.deleteMany() senão).
+    await prisma.alertaCertificado.deleteMany();
+    await prisma.certificadoDigital.deleteMany();
+    await prisma.serieFiscal.deleteMany();
+    await prisma.servico.deleteMany();
+    await prisma.produto.deleteMany();
+    await prisma.fornecedor.deleteMany();
+    await prisma.cliente.deleteMany();
+
     await prisma.empresa.deleteMany();
     await prisma.contabilidade.deleteMany();
     await prisma.user.deleteMany();
@@ -95,6 +106,123 @@ async function main(): Promise<void> {
           role: 'contabilidade_owner',
         },
       ],
+    });
+
+    // ========================================================================
+    // Phase 2 fixtures — clientes / fornecedores / produtos / servicos / series
+    // Reusa os 2 tenants A e B já criados acima. UUIDs determinísticos para que
+    // a suite cadastros-rls-regression tenha pontos de referência estáveis.
+    // ========================================================================
+    console.log('[seed] Phase 2 fixtures (clientes, fornecedores, produtos, servicos)');
+
+    const tenantA = UUIDS.empresaA;
+    const tenantB = UUIDS.empresaB;
+
+    // Cleanup Phase 2 já foi feito acima (antes de empresa.deleteMany()).
+    // Aqui apenas (re)criamos os fixtures via upsert — idempotente.
+
+    // Cliente fixture em A e B (mesmo CNPJ permitido — duplicidade é POR tenant).
+    // Usa upsert para idempotência completa do seed.
+    await prisma.cliente.upsert({
+      where: { tenantId_cpfCnpj: { tenantId: tenantA, cpfCnpj: '12345678000190' } },
+      update: {},
+      create: {
+        id: '55555555-5555-5555-5555-555555555555',
+        tenantId: tenantA,
+        tipoPessoa: 'juridica',
+        cpfCnpj: '12345678000190',
+        nome: 'Cliente A1 LTDA',
+        endereco: {
+          logradouro: 'Av. Paulista',
+          numero: '1500',
+          bairro: 'Bela Vista',
+          cidade: 'São Paulo',
+          uf: 'SP',
+          cep: '01310100',
+        },
+      },
+    });
+
+    await prisma.cliente.upsert({
+      where: { tenantId_cpfCnpj: { tenantId: tenantB, cpfCnpj: '12345678000190' } },
+      update: {},
+      create: {
+        id: '66666666-6666-6666-6666-666666666666',
+        tenantId: tenantB,
+        tipoPessoa: 'juridica',
+        cpfCnpj: '12345678000190',
+        nome: 'Cliente B1 LTDA',
+        endereco: {
+          logradouro: 'Av. Brigadeiro',
+          numero: '200',
+          bairro: 'Itaim',
+          cidade: 'São Paulo',
+          uf: 'SP',
+          cep: '04543000',
+        },
+      },
+    });
+
+    // Fornecedor fixture em A
+    await prisma.fornecedor.upsert({
+      where: { tenantId_cpfCnpj: { tenantId: tenantA, cpfCnpj: '11111111000111' } },
+      update: {},
+      create: {
+        tenantId: tenantA,
+        cpfCnpj: '11111111000111',
+        razaoSocial: 'Fornecedor A LTDA',
+        endereco: {
+          logradouro: 'R. Industrial',
+          numero: '99',
+          bairro: 'Distrito',
+          cidade: 'Guarulhos',
+          uf: 'SP',
+          cep: '07000000',
+        },
+      },
+    });
+
+    // Produto fixture em A
+    await prisma.produto.upsert({
+      where: { tenantId_codigo: { tenantId: tenantA, codigo: 'SKU-001' } },
+      update: {},
+      create: {
+        tenantId: tenantA,
+        codigo: 'SKU-001',
+        descricao: 'Produto teste A',
+        ncm: '12345678',
+        unidade: 'UN',
+        precoVenda: '10.5000',
+        origemMercadoria: 0,
+      },
+    });
+
+    // Servico fixture em A
+    await prisma.servico.upsert({
+      where: { tenantId_codigoInterno: { tenantId: tenantA, codigoInterno: 'SVC-001' } },
+      update: {},
+      create: {
+        tenantId: tenantA,
+        codigoInterno: 'SVC-001',
+        descricao: 'Consultoria contábil',
+        codigoMunicipal: '17.01',
+        precoPadrao: '500.0000',
+        aliquotaIss: '5.00',
+      },
+    });
+
+    // SerieFiscal em A
+    await prisma.serieFiscal.upsert({
+      where: { empresaId_modelo_serie: { empresaId: tenantA, modelo: 'NFE_55', serie: 1 } },
+      update: {},
+      create: {
+        tenantId: tenantA,
+        empresaId: tenantA,
+        modelo: 'NFE_55',
+        serie: 1,
+        proximoNumero: 1n,
+        ambiente: 'HOMOLOGACAO',
+      },
     });
 
     console.log('[seed] Concluído.');
