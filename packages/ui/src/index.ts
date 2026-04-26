@@ -51,6 +51,10 @@ export {
   type FiscalStatus,
   type StatusPillProps,
 } from './components/fiscal/status-pill';
+export {
+  HomologationBanner,
+  type HomologationBannerProps,
+} from './components/fiscal/homologation-banner';
 
 // Utils + tokens
 export { cn } from './lib/cn';

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Header } from '@/components/shell/header';
+import { HomologationBannerMount } from '@/components/shell/homologation-banner-mount';
 import { Sidebar } from '@/components/shell/sidebar';
 import { getCurrentUser } from '@/lib/clerk-shim';
 import { MockAuthProvider } from '@/lib/mock-auth';
@@ -29,6 +30,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <MockAuthProvider>
+      {/*
+        Banner CERT-07 (Plan 02-06) — sticky topo, amarelo. Aparece quando
+        empresa atual tem série ativa em HOMOLOGACAO. Server component faz
+        fetch /api/series e decide. Falha do fetch -> banner não aparece
+        (default safe). Defesa real fica no guard backend assertEnvironmentMatch.
+      */}
+      <HomologationBannerMount />
       <div className="flex min-h-screen bg-background">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
