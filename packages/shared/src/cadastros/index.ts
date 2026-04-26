@@ -7,3 +7,4 @@ export * from './produto.js';
 export * from './servico.js';
 export * from './empresa.js';
 export * from './contabilidade.js';
+export * from './certificado.js';

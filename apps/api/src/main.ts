@@ -6,6 +6,7 @@ initOtel();
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import multipart from '@fastify/multipart';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { BusinessExceptionFilter } from './common/business-exception.filter';
@@ -21,6 +22,16 @@ async function bootstrap(): Promise<void> {
   );
 
   app.useLogger(app.get(Logger));
+
+  // @fastify/multipart — Plan 02-04 cert pipeline. fileSize=100KB (T-02-04-09 DoS guard).
+  // Outras rotas que precisarem de multipart simplesmente recebem `req.file()` /
+  // `req.files()` na Fastify request — registro é global.
+  await app.register(multipart, {
+    limits: {
+      fileSize: 100 * 1024, // 100 KB
+      files: 1, // só aceita 1 arquivo por upload (cert é single)
+    },
+  });
 
   // 4xx domain exceptions → JSON estruturado, log info-level (Plan 02-02).
   app.useGlobalFilters(new BusinessExceptionFilter());

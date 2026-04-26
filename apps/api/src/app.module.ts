@@ -16,6 +16,9 @@ import { FornecedoresModule } from './modules/fornecedores/fornecedores.module';
 import { ProdutosModule } from './modules/produtos/produtos.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 // === End Phase 2 Cadastros imports ===
+// === Phase 2 Certificados (02-04) imports — DO NOT MOVE; 02-06 appends below ===
+import { CertificadosModule } from './modules/certificados/certificados.module';
+// === End Phase 2 Certificados imports ===
 import { HealthModule } from './modules/health/health.module';
 import { LgpdModule } from './modules/lgpd/lgpd.module';
 import { SentryModule } from './modules/observability/sentry.module';
@@ -49,6 +52,9 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     EmpresasModule,
     ContabilidadesModule,
     // === End Phase 2 Cadastros ===
+    // === Phase 2 Certificados (02-04) — DO NOT MOVE; 02-06 appends below ===
+    CertificadosModule,
+    // === End Phase 2 Certificados ===
   ],
   providers: [
     // Ordem CRÍTICA (Plan 07):
