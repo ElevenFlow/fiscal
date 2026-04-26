@@ -9,7 +9,11 @@ export interface FormToolbarProps {
   subtitle?: string;
   backHref: string;
   onCancel: () => void;
-  onSaveDraft: () => void;
+  /**
+   * Plan 02-07: rascunho é cosmético (não persiste). Forms novos podem omitir;
+   * comportamento default = mostra botão somente quando handler for fornecido.
+   */
+  onSaveDraft?: () => void;
   onSubmit: () => void;
   isSubmitting?: boolean;
   submitLabel?: string;
@@ -47,9 +51,11 @@ export function FormToolbar({
         <Button variant="ghost" onClick={onCancel} disabled={isSubmitting}>
           Cancelar
         </Button>
-        <Button variant="outline" onClick={onSaveDraft} disabled={isSubmitting}>
-          Salvar rascunho
-        </Button>
+        {onSaveDraft ? (
+          <Button variant="outline" onClick={onSaveDraft} disabled={isSubmitting}>
+            Salvar rascunho
+          </Button>
+        ) : null}
         <Button onClick={onSubmit} disabled={isSubmitting}>
           {isSubmitting ? 'Salvando...' : submitLabel}
         </Button>

@@ -1,70 +1,80 @@
 'use client';
 
+/**
+ * Listagem de Produtos — Plan 02-07 Task 3.
+ */
+
 import { DataTable, type DataTableColumn } from '@/components/cadastros/data-table';
 import { RowActions } from '@/components/cadastros/row-actions';
-import { type Produto, produtos as fixture } from '@/lib/mock-data';
 import { Badge, Button, Money, cn } from '@nexo/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
-const STATUS: Array<{ value: 'ativo' | 'inativo' | ''; label: string }> = [
-  { value: '', label: 'Todos' },
-  { value: 'ativo', label: 'Ativos' },
-  { value: 'inativo', label: 'Inativos' },
-];
+interface ProdutoListItem {
+  id: string;
+  codigo: string;
+  descricao: string;
+  ncm: string;
+  unidade: string;
+  precoCusto: string | null;
+  precoVenda: string;
+  estoqueAtual?: string | null;
+  estoqueMinimo?: string | null;
+  categoria: string | null;
+  ativo: boolean;
+  createdAt: string;
+}
+
+interface PageResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
 
 export default function ProdutosListPage() {
-  const [rows, setRows] = useState(fixture);
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [status, setStatus] = useState<'ativo' | 'inativo' | ''>('');
-  const [abaixoMinimo, setAbaixoMinimo] = useState(false);
   const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  // Mock protótipo não tem flag ativo/inativo — consideramos todos ativos.
-  // Toggle mantido para mostrar UX do filtro.
-  const categorias = useMemo(() => {
-    const set = new Set(rows.map((p) => p.categoria));
-    return Array.from(set).sort();
-  }, [rows]);
+  const { data, isLoading } = useQuery<PageResult<ProdutoListItem>>({
+    queryKey: ['produtos', { page, pageSize, search }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        ...(search ? { search } : {}),
+      });
+      const res = await fetch(`/api/produtos?${params}`);
+      if (!res.ok) throw new Error('Falha ao carregar produtos');
+      return (await res.json()) as PageResult<ProdutoListItem>;
+    },
+  });
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return rows.filter((p) => {
-      if (term) {
-        const match =
-          p.sku.toLowerCase().includes(term) ||
-          p.descricao.toLowerCase().includes(term) ||
-          p.ncm.includes(term);
-        if (!match) return false;
-      }
-      if (categoria && p.categoria !== categoria) return false;
-      if (abaixoMinimo && p.estoque >= p.estoqueMinimo) return false;
-      if (status === 'inativo') return false;
-      return true;
-    });
-  }, [rows, search, categoria, abaixoMinimo, status]);
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/produtos/${id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error('Falha ao excluir');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['produtos'] });
+      toast.success('Produto desativado');
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
 
-  const clearFilters = () => {
-    setSearch('');
-    setCategoria('');
-    setStatus('');
-    setAbaixoMinimo(false);
-    setPage(1);
-  };
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
 
-  const handleDelete = (id: string, descricao: string) => {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-    toast.success(`Produto "${descricao}" removido (mock)`);
-  };
-
-  const columns: DataTableColumn<Produto>[] = [
+  const columns: DataTableColumn<ProdutoListItem>[] = [
     {
-      key: 'sku',
+      key: 'codigo',
       header: 'SKU',
-      render: (p) => <span className="font-mono text-xs font-medium">{p.sku}</span>,
+      render: (p) => <span className="font-mono text-xs font-medium">{p.codigo}</span>,
     },
     {
       key: 'descricao',
@@ -72,7 +82,9 @@ export default function ProdutosListPage() {
       render: (p) => (
         <div>
           <div className="font-medium">{p.descricao}</div>
-          <div className="text-xs text-muted-foreground">{p.categoria}</div>
+          {p.categoria ? (
+            <div className="text-xs text-muted-foreground">{p.categoria}</div>
+          ) : null}
         </div>
       ),
     },
@@ -88,37 +100,22 @@ export default function ProdutosListPage() {
       render: (p) => <span className="text-xs font-semibold">{p.unidade}</span>,
     },
     {
-      key: 'estoque',
-      header: 'Estoque',
-      align: 'right',
-      render: (p) => {
-        const low = p.estoque < p.estoqueMinimo;
-        return (
-          <Badge
-            variant={low ? 'destructive' : 'secondary'}
-            className={cn(
-              'font-mono tabular-nums',
-              low && 'bg-brand-danger/10 text-brand-danger hover:bg-brand-danger/20',
-            )}
-          >
-            {p.estoque} {p.unidade}
-            {low ? <span className="ml-1">· mín {p.estoqueMinimo}</span> : null}
-          </Badge>
-        );
-      },
-    },
-    {
       key: 'precoVenda',
       header: 'Preço venda',
       align: 'right',
-      render: (p) => <Money value={p.precoVenda} />,
+      render: (p) => <Money value={Number(p.precoVenda)} />,
     },
     {
       key: 'status',
       header: 'Status',
-      render: () => (
-        <Badge variant="secondary" className="bg-brand-green/10 text-brand-green">
-          Ativo
+      render: (p) => (
+        <Badge
+          variant="secondary"
+          className={cn(
+            p.ativo ? 'bg-brand-green/10 text-brand-green' : 'bg-muted text-muted-foreground',
+          )}
+        >
+          {p.ativo ? 'Ativo' : 'Inativo'}
         </Badge>
       ),
     },
@@ -130,8 +127,9 @@ export default function ProdutosListPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Produtos</h1>
           <p className="text-muted-foreground">
-            {filtered.length}{' '}
-            {filtered.length === 1 ? 'produto no catálogo' : 'produtos no catálogo'}.
+            {isLoading
+              ? 'Carregando...'
+              : `${total} ${total === 1 ? 'produto no catálogo' : 'produtos no catálogo'}.`}
           </p>
         </div>
         <Button asChild>
@@ -143,7 +141,7 @@ export default function ProdutosListPage() {
       </div>
 
       <DataTable
-        rows={filtered}
+        rows={rows}
         columns={columns}
         getRowId={(p) => p.id}
         search={search}
@@ -152,92 +150,25 @@ export default function ProdutosListPage() {
           setPage(1);
         }}
         searchPlaceholder="Buscar por SKU, descrição ou NCM..."
-        filters={
-          <>
-            <select
-              value={categoria}
-              onChange={(e) => {
-                setCategoria(e.target.value);
-                setPage(1);
-              }}
-              className={cn(
-                'h-9 rounded-md border border-input bg-background px-3 text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              )}
-              aria-label="Categoria"
-            >
-              <option value="">Todas as categorias</option>
-              {categorias.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as 'ativo' | 'inativo' | '');
-                setPage(1);
-              }}
-              className={cn(
-                'h-9 rounded-md border border-input bg-background px-3 text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              )}
-              aria-label="Status"
-            >
-              {STATUS.map((s) => (
-                <option key={s.value || 'all'} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-            <label
-              className={cn(
-                'inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm transition-colors',
-                abaixoMinimo
-                  ? 'border-brand-danger/40 bg-brand-danger/5 text-brand-danger'
-                  : 'border-input bg-background hover:bg-muted/40',
-              )}
-            >
-              <input
-                type="checkbox"
-                checked={abaixoMinimo}
-                onChange={(e) => {
-                  setAbaixoMinimo(e.target.checked);
-                  setPage(1);
-                }}
-                className="h-4 w-4 rounded border-input"
-              />
-              <span className="font-medium">Abaixo do mínimo</span>
-            </label>
-          </>
-        }
-        onClearFilters={clearFilters}
+        onClearFilters={() => {
+          setSearch('');
+          setPage(1);
+        }}
         actions={(row) => (
           <RowActions
             editHref={`/cadastros/produtos/${row.id}`}
-            onDelete={() => handleDelete(row.id, row.descricao)}
-            deleteTitle="Remover produto"
-            deleteDescription={`Remover "${row.descricao}" do catálogo? Produto com estoque será também zerado.`}
-            extra={[
-              {
-                label: 'Ver movimentações',
-                onClick: () => toast.info('Movimentações (mock)'),
-              },
-              {
-                label: 'Duplicar',
-                onClick: () => toast.info('Produto duplicado (mock)'),
-              },
-            ]}
+            onDelete={() => deleteMutation.mutate(row.id)}
+            deleteTitle="Desativar produto"
+            deleteDescription={`Desativar "${row.descricao}"? Notas já emitidas não são afetadas.`}
           />
         )}
         page={page}
-        pageSize={10}
+        pageSize={pageSize}
         onPageChange={setPage}
         totalLabelSingular="produto"
         totalLabelPlural="produtos"
-        emptyTitle="Nenhum produto encontrado"
-        emptyDescription="Ajuste os filtros ou cadastre um novo produto."
+        emptyTitle={isLoading ? 'Carregando...' : 'Nenhum produto encontrado'}
+        emptyDescription="Ajuste a busca ou cadastre um novo produto."
       />
     </div>
   );

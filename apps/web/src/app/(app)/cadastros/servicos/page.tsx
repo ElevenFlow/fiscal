@@ -1,58 +1,77 @@
 'use client';
 
+/**
+ * Listagem de Serviços — Plan 02-07 Task 3.
+ */
+
 import { DataTable, type DataTableColumn } from '@/components/cadastros/data-table';
 import { RowActions } from '@/components/cadastros/row-actions';
-import { type Servico, servicos as fixture } from '@/lib/mock-data';
 import { Badge, Button, Money, cn } from '@nexo/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
-const STATUS: Array<{ value: 'ativo' | 'inativo' | ''; label: string }> = [
-  { value: '', label: 'Todos' },
-  { value: 'ativo', label: 'Ativos' },
-  { value: 'inativo', label: 'Inativos' },
-];
+interface ServicoListItem {
+  id: string;
+  codigoInterno: string;
+  descricao: string;
+  codigoMunicipal: string;
+  cnae: string | null;
+  precoPadrao: string;
+  aliquotaIss: string;
+  ativo: boolean;
+  createdAt: string;
+}
+
+interface PageResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
 
 export default function ServicosListPage() {
-  const [rows, setRows] = useState(fixture);
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'ativo' | 'inativo' | ''>('');
   const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return rows.filter((s) => {
-      if (term) {
-        const match =
-          s.codigo.toLowerCase().includes(term) ||
-          s.descricao.toLowerCase().includes(term) ||
-          s.codigoMunicipal.includes(term);
-        if (!match) return false;
-      }
-      if (status === 'ativo' && !s.ativo) return false;
-      if (status === 'inativo' && s.ativo) return false;
-      return true;
-    });
-  }, [rows, search, status]);
+  const { data, isLoading } = useQuery<PageResult<ServicoListItem>>({
+    queryKey: ['servicos', { page, pageSize, search }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        ...(search ? { search } : {}),
+      });
+      const res = await fetch(`/api/servicos?${params}`);
+      if (!res.ok) throw new Error('Falha ao carregar serviços');
+      return (await res.json()) as PageResult<ServicoListItem>;
+    },
+  });
 
-  const clearFilters = () => {
-    setSearch('');
-    setStatus('');
-    setPage(1);
-  };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/servicos/${id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error('Falha ao excluir');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['servicos'] });
+      toast.success('Serviço desativado');
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
 
-  const handleDelete = (id: string, descricao: string) => {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-    toast.success(`Serviço "${descricao}" removido (mock)`);
-  };
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
 
-  const columns: DataTableColumn<Servico>[] = [
+  const columns: DataTableColumn<ServicoListItem>[] = [
     {
       key: 'codigo',
       header: 'Código',
-      render: (s) => <span className="font-mono text-xs font-medium">{s.codigo}</span>,
+      render: (s) => <span className="font-mono text-xs font-medium">{s.codigoInterno}</span>,
     },
     {
       key: 'descricao',
@@ -68,13 +87,13 @@ export default function ServicosListPage() {
       key: 'iss',
       header: 'Alíquota ISS',
       align: 'right',
-      render: (s) => <span className="tabular-nums">{s.aliquotaIss.toFixed(2)}%</span>,
+      render: (s) => <span className="tabular-nums">{Number(s.aliquotaIss).toFixed(2)}%</span>,
     },
     {
       key: 'preco',
       header: 'Preço',
       align: 'right',
-      render: (s) => <Money value={s.precoPadrao} />,
+      render: (s) => <Money value={Number(s.precoPadrao)} />,
     },
     {
       key: 'status',
@@ -98,8 +117,9 @@ export default function ServicosListPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Serviços</h1>
           <p className="text-muted-foreground">
-            {filtered.length}{' '}
-            {filtered.length === 1 ? 'serviço no catálogo' : 'serviços no catálogo'}.
+            {isLoading
+              ? 'Carregando...'
+              : `${total} ${total === 1 ? 'serviço no catálogo' : 'serviços no catálogo'}.`}
           </p>
         </div>
         <Button asChild>
@@ -111,7 +131,7 @@ export default function ServicosListPage() {
       </div>
 
       <DataTable
-        rows={filtered}
+        rows={rows}
         columns={columns}
         getRowId={(s) => s.id}
         search={search}
@@ -120,53 +140,25 @@ export default function ServicosListPage() {
           setPage(1);
         }}
         searchPlaceholder="Buscar por código, descrição ou item municipal..."
-        filters={
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as 'ativo' | 'inativo' | '');
-              setPage(1);
-            }}
-            className={cn(
-              'h-9 rounded-md border border-input bg-background px-3 text-sm',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            )}
-            aria-label="Status"
-          >
-            {STATUS.map((s) => (
-              <option key={s.value || 'all'} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        }
-        onClearFilters={clearFilters}
+        onClearFilters={() => {
+          setSearch('');
+          setPage(1);
+        }}
         actions={(row) => (
           <RowActions
             editHref={`/cadastros/servicos/${row.id}`}
-            onDelete={() => handleDelete(row.id, row.descricao)}
-            deleteTitle="Remover serviço"
-            deleteDescription={`Remover "${row.descricao}" do catálogo? Notas já emitidas não são afetadas.`}
-            extra={[
-              {
-                label: row.ativo ? 'Desativar' : 'Ativar',
-                onClick: () => {
-                  setRows((prev) =>
-                    prev.map((r) => (r.id === row.id ? { ...r, ativo: !r.ativo } : r)),
-                  );
-                  toast.info(`Serviço ${row.ativo ? 'desativado' : 'ativado'} (mock)`);
-                },
-              },
-            ]}
+            onDelete={() => deleteMutation.mutate(row.id)}
+            deleteTitle="Desativar serviço"
+            deleteDescription={`Desativar "${row.descricao}"? Notas já emitidas não são afetadas.`}
           />
         )}
         page={page}
-        pageSize={10}
+        pageSize={pageSize}
         onPageChange={setPage}
         totalLabelSingular="serviço"
         totalLabelPlural="serviços"
-        emptyTitle="Nenhum serviço encontrado"
-        emptyDescription="Ajuste os filtros ou cadastre um novo serviço."
+        emptyTitle={isLoading ? 'Carregando...' : 'Nenhum serviço encontrado'}
+        emptyDescription="Ajuste a busca ou cadastre um novo serviço."
       />
     </div>
   );

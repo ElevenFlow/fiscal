@@ -1,32 +1,75 @@
 'use client';
 
+/**
+ * Listagem de Fornecedores — Plan 02-07 Task 3.
+ *
+ * Substituiu fixture mock-data por TanStack Query (`useQuery`) → /api/fornecedores.
+ */
+
 import { DataTable, type DataTableColumn } from '@/components/cadastros/data-table';
 import { RowActions } from '@/components/cadastros/row-actions';
 import { UfSelect } from '@/components/forms/uf-select';
-import { type Fornecedor, fornecedores as fixture } from '@/lib/mock-data';
-import { Button, Money } from '@nexo/ui';
+import { Button } from '@nexo/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
+interface FornecedorListItem {
+  id: string;
+  cpfCnpj: string;
+  razaoSocial: string;
+  nomeFantasia: string | null;
+  endereco: { cidade?: string; uf?: string } | null;
+  email: string | null;
+  ativo: boolean;
+  createdAt: string;
+}
+
+interface PageResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 export default function FornecedoresListPage() {
-  const [rows, setRows] = useState(fixture);
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [uf, setUf] = useState('');
   const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return rows.filter((f) => {
-      if (term) {
-        const match = f.razaoSocial.toLowerCase().includes(term) || f.cnpj.includes(term);
-        if (!match) return false;
-      }
-      if (uf && f.uf !== uf) return false;
-      return true;
-    });
-  }, [rows, search, uf]);
+  const { data, isLoading } = useQuery<PageResult<FornecedorListItem>>({
+    queryKey: ['fornecedores', { page, pageSize, search, uf }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        ...(search ? { search } : {}),
+        ...(uf ? { uf } : {}),
+      });
+      const res = await fetch(`/api/fornecedores?${params}`);
+      if (!res.ok) throw new Error('Falha ao carregar fornecedores');
+      return (await res.json()) as PageResult<FornecedorListItem>;
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/fornecedores/${id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error('Falha ao excluir');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fornecedores'] });
+      toast.success('Fornecedor desativado');
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   const clearFilters = () => {
     setSearch('');
@@ -34,12 +77,7 @@ export default function FornecedoresListPage() {
     setPage(1);
   };
 
-  const handleDelete = (id: string, nome: string) => {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-    toast.success(`Fornecedor "${nome}" removido (mock)`);
-  };
-
-  const columns: DataTableColumn<Fornecedor>[] = [
+  const columns: DataTableColumn<FornecedorListItem>[] = [
     {
       key: 'razao',
       header: 'Razão',
@@ -48,28 +86,33 @@ export default function FornecedoresListPage() {
     {
       key: 'cnpj',
       header: 'CNPJ',
-      render: (f) => <span className="font-mono text-xs">{f.cnpj}</span>,
+      render: (f) => <span className="font-mono text-xs">{f.cpfCnpj}</span>,
     },
     {
       key: 'local',
       header: 'Cidade / UF',
-      render: (f) => (
-        <span>
-          {f.cidade}/<span className="font-semibold">{f.uf}</span>
-        </span>
-      ),
+      render: (f) => {
+        const cidade = f.endereco?.cidade ?? '—';
+        const ufVal = f.endereco?.uf ?? '—';
+        return (
+          <span>
+            {cidade}/<span className="font-semibold">{ufVal}</span>
+          </span>
+        );
+      },
     },
     {
-      key: 'ultimaCompra',
-      header: 'Última compra',
+      key: 'email',
+      header: 'E-mail',
       className: 'text-xs text-muted-foreground',
-      render: (f) => f.ultimaCompra,
+      render: (f) => f.email ?? '—',
     },
     {
-      key: 'total12m',
-      header: 'Total 12m',
-      align: 'right',
-      render: (f) => <Money value={f.totalCompras12m} />,
+      key: 'createdAt',
+      header: 'Cadastrado',
+      className: 'text-xs text-muted-foreground',
+      render: (f) =>
+        f.createdAt ? new Date(f.createdAt).toLocaleDateString('pt-BR') : '—',
     },
   ];
 
@@ -79,8 +122,9 @@ export default function FornecedoresListPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Fornecedores</h1>
           <p className="text-muted-foreground">
-            {filtered.length}{' '}
-            {filtered.length === 1 ? 'fornecedor cadastrado' : 'fornecedores cadastrados'}.
+            {isLoading
+              ? 'Carregando...'
+              : `${total} ${total === 1 ? 'fornecedor cadastrado' : 'fornecedores cadastrados'}.`}
           </p>
         </div>
         <Button asChild>
@@ -92,7 +136,7 @@ export default function FornecedoresListPage() {
       </div>
 
       <DataTable
-        rows={filtered}
+        rows={rows}
         columns={columns}
         getRowId={(f) => f.id}
         search={search}
@@ -115,23 +159,17 @@ export default function FornecedoresListPage() {
         actions={(row) => (
           <RowActions
             editHref={`/cadastros/fornecedores/${row.id}`}
-            onDelete={() => handleDelete(row.id, row.razaoSocial)}
-            deleteTitle="Remover fornecedor"
-            deleteDescription={`Remover "${row.razaoSocial}" da base? O histórico de compras permanece auditável.`}
-            extra={[
-              {
-                label: 'Ver XMLs importados',
-                onClick: () => toast.info('Filtro de XMLs (mock)'),
-              },
-            ]}
+            onDelete={() => deleteMutation.mutate(row.id)}
+            deleteTitle="Desativar fornecedor"
+            deleteDescription={`Desativar "${row.razaoSocial}"? O histórico de XML permanece auditável.`}
           />
         )}
         page={page}
-        pageSize={10}
+        pageSize={pageSize}
         onPageChange={setPage}
         totalLabelSingular="fornecedor"
         totalLabelPlural="fornecedores"
-        emptyTitle="Nenhum fornecedor"
+        emptyTitle={isLoading ? 'Carregando...' : 'Nenhum fornecedor'}
         emptyDescription="Ajuste os filtros ou cadastre um novo fornecedor."
       />
     </div>

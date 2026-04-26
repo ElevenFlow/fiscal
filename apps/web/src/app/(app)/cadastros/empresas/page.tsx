@@ -1,74 +1,94 @@
 'use client';
 
+/**
+ * Listagem de Empresas — Plan 02-07 Task 3.
+ */
+
 import { DataTable, type DataTableColumn } from '@/components/cadastros/data-table';
 import { RowActions } from '@/components/cadastros/row-actions';
 import { UfSelect } from '@/components/forms/uf-select';
-import { type Empresa, empresas as empresasFixture } from '@/lib/mock-data';
 import { Button, StatusPill, cn } from '@nexo/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
-const REGIMES = ['Simples Nacional', 'Lucro Presumido', 'Lucro Real', 'MEI'] as const;
-const STATUS_OPTIONS: Array<{ value: Empresa['status']; label: string }> = [
-  { value: 'ativa', label: 'Ativa' },
-  { value: 'pendente', label: 'Pendente' },
-  { value: 'suspensa', label: 'Suspensa' },
-];
+const REGIMES = [
+  { value: 'simples_nacional', label: 'Simples Nacional' },
+  { value: 'lucro_presumido', label: 'Lucro Presumido' },
+  { value: 'lucro_real', label: 'Lucro Real' },
+  { value: 'mei', label: 'MEI' },
+] as const;
 
-const statusToPill: Record<Empresa['status'], 'autorizada' | 'pendente' | 'cancelada'> = {
-  ativa: 'autorizada',
-  pendente: 'pendente',
-  suspensa: 'cancelada',
-};
+interface EmpresaListItem {
+  id: string;
+  razaoSocial: string;
+  nomeFantasia: string | null;
+  cnpj: string;
+  regimeTributario: string;
+  endereco: { cidade?: string; uf?: string } | null;
+  ativo: boolean;
+  createdAt: string;
+}
+
+interface PageResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
 
 export default function EmpresasListPage() {
-  const [rows, setRows] = useState(empresasFixture);
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [regime, setRegime] = useState('');
   const [uf, setUf] = useState('');
-  const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return rows.filter((e) => {
-      if (term) {
-        const match =
-          e.razaoSocial.toLowerCase().includes(term) ||
-          e.nomeFantasia.toLowerCase().includes(term) ||
-          e.cnpj.includes(term);
-        if (!match) return false;
-      }
-      if (regime && e.regime !== regime) return false;
-      if (uf && e.uf !== uf) return false;
-      if (status && e.status !== status) return false;
-      return true;
-    });
-  }, [rows, search, regime, uf, status]);
+  const { data, isLoading } = useQuery<PageResult<EmpresaListItem>>({
+    queryKey: ['empresas', { page, pageSize, search, regime, uf }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        ...(search ? { search } : {}),
+        ...(regime ? { regimeTributario: regime } : {}),
+        ...(uf ? { uf } : {}),
+      });
+      const res = await fetch(`/api/empresas?${params}`);
+      if (!res.ok) throw new Error('Falha ao carregar empresas');
+      return (await res.json()) as PageResult<EmpresaListItem>;
+    },
+  });
 
-  const clearFilters = () => {
-    setSearch('');
-    setRegime('');
-    setUf('');
-    setStatus('');
-    setPage(1);
-  };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/empresas/${id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error('Falha ao excluir');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['empresas'] });
+      qc.invalidateQueries({ queryKey: ['empresas-minhas'] });
+      toast.success('Empresa desativada');
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
 
-  const handleDelete = (id: string, nome: string) => {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-    toast.success(`Empresa "${nome}" removida (mock)`);
-  };
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
 
-  const columns: DataTableColumn<Empresa>[] = [
+  const columns: DataTableColumn<EmpresaListItem>[] = [
     {
       key: 'razao',
       header: 'Razão social',
       render: (e) => (
         <div>
           <div className="font-medium">{e.razaoSocial}</div>
-          <div className="text-xs text-muted-foreground">{e.nomeFantasia}</div>
+          {e.nomeFantasia ? (
+            <div className="text-xs text-muted-foreground">{e.nomeFantasia}</div>
+          ) : null}
         </div>
       ),
     },
@@ -77,26 +97,30 @@ export default function EmpresasListPage() {
       header: 'CNPJ',
       render: (e) => <span className="font-mono text-xs">{e.cnpj}</span>,
     },
-    { key: 'regime', header: 'Regime', render: (e) => e.regime },
+    {
+      key: 'regime',
+      header: 'Regime',
+      render: (e) => REGIMES.find((r) => r.value === e.regimeTributario)?.label ?? e.regimeTributario,
+    },
     {
       key: 'local',
       header: 'Cidade / UF',
-      render: (e) => (
-        <span>
-          {e.cidade}/<span className="font-semibold">{e.uf}</span>
-        </span>
-      ),
+      render: (e) => {
+        const cidade = e.endereco?.cidade ?? '—';
+        const ufVal = e.endereco?.uf ?? '—';
+        return (
+          <span>
+            {cidade}/<span className="font-semibold">{ufVal}</span>
+          </span>
+        );
+      },
     },
     {
       key: 'status',
       header: 'Status',
-      render: (e) => <StatusPill status={statusToPill[e.status]} />,
-    },
-    {
-      key: 'ultimoAcesso',
-      header: 'Último acesso',
-      className: 'text-xs text-muted-foreground',
-      render: (e) => e.ultimoAcesso,
+      render: (e) => (
+        <StatusPill status={e.ativo ? 'autorizada' : 'cancelada'} />
+      ),
     },
   ];
 
@@ -106,7 +130,9 @@ export default function EmpresasListPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Empresas</h1>
           <p className="text-muted-foreground">
-            {filtered.length} {filtered.length === 1 ? 'empresa' : 'empresas'} na sua carteira.
+            {isLoading
+              ? 'Carregando...'
+              : `${total} ${total === 1 ? 'empresa' : 'empresas'} na sua carteira.`}
           </p>
         </div>
         <Button asChild>
@@ -118,7 +144,7 @@ export default function EmpresasListPage() {
       </div>
 
       <DataTable
-        rows={filtered}
+        rows={rows}
         columns={columns}
         getRowId={(e) => e.id}
         search={search}
@@ -143,8 +169,8 @@ export default function EmpresasListPage() {
             >
               <option value="">Todos os regimes</option>
               {REGIMES.map((r) => (
-                <option key={r} value={r}>
-                  {r}
+                <option key={r.value} value={r.value}>
+                  {r.label}
                 </option>
               ))}
             </select>
@@ -157,53 +183,29 @@ export default function EmpresasListPage() {
               }}
               placeholder="UF"
             />
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setPage(1);
-              }}
-              className={cn(
-                'h-9 rounded-md border border-input bg-background px-3 text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              )}
-              aria-label="Status"
-            >
-              <option value="">Todos os status</option>
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
           </>
         }
-        onClearFilters={clearFilters}
+        onClearFilters={() => {
+          setSearch('');
+          setRegime('');
+          setUf('');
+          setPage(1);
+        }}
         actions={(row) => (
           <RowActions
             editHref={`/cadastros/empresas/${row.id}`}
-            onDelete={() => handleDelete(row.id, row.razaoSocial)}
-            deleteTitle="Remover empresa"
-            deleteDescription={`Remover "${row.razaoSocial}" da base? Essa ação é simulada no modo protótipo.`}
-            extra={[
-              {
-                label: 'Abrir certificado',
-                onClick: () => toast.info('Abrir certificado (mock)'),
-              },
-              {
-                label: 'Suspender acesso',
-                onClick: () => toast.info('Suspensão registrada (mock)'),
-              },
-            ]}
+            onDelete={() => deleteMutation.mutate(row.id)}
+            deleteTitle="Desativar empresa"
+            deleteDescription={`Desativar "${row.razaoSocial}"? Notas e arquivos da empresa permanecem auditáveis.`}
           />
         )}
         page={page}
-        pageSize={10}
+        pageSize={pageSize}
         onPageChange={setPage}
         totalLabelSingular="empresa"
         totalLabelPlural="empresas"
-        emptyTitle="Nenhuma empresa encontrada"
-        emptyDescription="Nenhuma empresa atende aos filtros aplicados. Ajuste a busca ou crie uma nova."
+        emptyTitle={isLoading ? 'Carregando...' : 'Nenhuma empresa encontrada'}
+        emptyDescription="Ajuste os filtros ou cadastre uma nova empresa."
       />
     </div>
   );

@@ -1,70 +1,77 @@
 'use client';
 
+/**
+ * Listagem de Contabilidades — Plan 02-07 Task 3.
+ *
+ * Contabilidade é UNIQUE global (não tenant-scoped) — apenas platform_admin
+ * acessa via RBAC backend. Frontend lista o que o backend autorizar.
+ */
+
 import { DataTable, type DataTableColumn } from '@/components/cadastros/data-table';
 import { RowActions } from '@/components/cadastros/row-actions';
-import { UfSelect } from '@/components/forms/uf-select';
-import { type Contabilidade, contabilidades as fixture } from '@/lib/mock-data';
-import { Badge, Button, cn } from '@nexo/ui';
+import { Button } from '@nexo/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
-const FAIXAS = [
-  { value: '', label: 'Todas as carteiras' },
-  { value: 'ate10', label: 'Até 10 empresas' },
-  { value: '11a25', label: '11 a 25 empresas' },
-  { value: '26mais', label: '26 ou mais' },
-];
+interface ContabilidadeListItem {
+  id: string;
+  nome: string;
+  cnpj: string;
+  endereco: { cidade?: string; uf?: string } | null;
+  contatos: { responsavel?: string; email?: string } | null;
+  createdAt: string;
+}
 
-function matchFaixa(carteira: number, faixa: string) {
-  if (!faixa) return true;
-  if (faixa === 'ate10') return carteira <= 10;
-  if (faixa === '11a25') return carteira >= 11 && carteira <= 25;
-  if (faixa === '26mais') return carteira >= 26;
-  return true;
+interface PageResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
 }
 
 export default function ContabilidadesListPage() {
-  const [rows, setRows] = useState(fixture);
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
-  const [uf, setUf] = useState('');
-  const [faixa, setFaixa] = useState('');
   const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return rows.filter((c) => {
-      if (term) {
-        const match =
-          c.razaoSocial.toLowerCase().includes(term) ||
-          c.cnpj.includes(term) ||
-          c.responsavel.toLowerCase().includes(term);
-        if (!match) return false;
-      }
-      if (uf && c.uf !== uf) return false;
-      if (!matchFaixa(c.carteira, faixa)) return false;
-      return true;
-    });
-  }, [rows, search, uf, faixa]);
+  const { data, isLoading } = useQuery<PageResult<ContabilidadeListItem>>({
+    queryKey: ['contabilidades', { page, pageSize, search }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        ...(search ? { search } : {}),
+      });
+      const res = await fetch(`/api/contabilidades?${params}`);
+      if (!res.ok) throw new Error('Falha ao carregar contabilidades');
+      return (await res.json()) as PageResult<ContabilidadeListItem>;
+    },
+  });
 
-  const clearFilters = () => {
-    setSearch('');
-    setUf('');
-    setFaixa('');
-    setPage(1);
-  };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/contabilidades/${id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error('Falha ao excluir');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contabilidades'] });
+      toast.success('Contabilidade removida');
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
 
-  const handleDelete = (id: string, nome: string) => {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-    toast.success(`Contabilidade "${nome}" removida (mock)`);
-  };
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
 
-  const columns: DataTableColumn<Contabilidade>[] = [
+  const columns: DataTableColumn<ContabilidadeListItem>[] = [
     {
-      key: 'razao',
-      header: 'Razão',
-      render: (c) => <span className="font-medium">{c.razaoSocial}</span>,
+      key: 'nome',
+      header: 'Nome',
+      render: (c) => <span className="font-medium">{c.nome}</span>,
     },
     {
       key: 'cnpj',
@@ -74,22 +81,27 @@ export default function ContabilidadesListPage() {
     {
       key: 'local',
       header: 'Cidade / UF',
-      render: (c) => (
-        <span>
-          {c.cidade}/<span className="font-semibold">{c.uf}</span>
-        </span>
-      ),
+      render: (c) => {
+        const cidade = c.endereco?.cidade ?? '—';
+        const uf = c.endereco?.uf ?? '—';
+        return (
+          <span>
+            {cidade}/<span className="font-semibold">{uf}</span>
+          </span>
+        );
+      },
     },
     {
-      key: 'carteira',
-      header: 'Carteira',
-      render: (c) => (
-        <Badge variant="secondary" className="font-normal">
-          {c.carteira} {c.carteira === 1 ? 'empresa' : 'empresas'}
-        </Badge>
-      ),
+      key: 'responsavel',
+      header: 'Responsável',
+      render: (c) => c.contatos?.responsavel ?? '—',
     },
-    { key: 'responsavel', header: 'Responsável', render: (c) => c.responsavel },
+    {
+      key: 'email',
+      header: 'E-mail',
+      className: 'text-xs text-muted-foreground',
+      render: (c) => c.contatos?.email ?? '—',
+    },
   ];
 
   return (
@@ -98,8 +110,9 @@ export default function ContabilidadesListPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Contabilidades</h1>
           <p className="text-muted-foreground">
-            {filtered.length}{' '}
-            {filtered.length === 1 ? 'contabilidade cadastrada' : 'contabilidades cadastradas'}.
+            {isLoading
+              ? 'Carregando...'
+              : `${total} ${total === 1 ? 'contabilidade cadastrada' : 'contabilidades cadastradas'}.`}
           </p>
         </div>
         <Button asChild>
@@ -111,7 +124,7 @@ export default function ContabilidadesListPage() {
       </div>
 
       <DataTable
-        rows={filtered}
+        rows={rows}
         columns={columns}
         getRowId={(c) => c.id}
         search={search}
@@ -119,59 +132,26 @@ export default function ContabilidadesListPage() {
           setSearch(v);
           setPage(1);
         }}
-        searchPlaceholder="Buscar por razão, CNPJ ou responsável..."
-        filters={
-          <>
-            <UfSelect
-              className="h-9 w-24"
-              value={uf}
-              onChange={(v) => {
-                setUf(v);
-                setPage(1);
-              }}
-            />
-            <select
-              value={faixa}
-              onChange={(e) => {
-                setFaixa(e.target.value);
-                setPage(1);
-              }}
-              className={cn(
-                'h-9 rounded-md border border-input bg-background px-3 text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              )}
-              aria-label="Faixa de carteira"
-            >
-              {FAIXAS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-          </>
-        }
-        onClearFilters={clearFilters}
+        searchPlaceholder="Buscar por nome ou CNPJ..."
+        onClearFilters={() => {
+          setSearch('');
+          setPage(1);
+        }}
         actions={(row) => (
           <RowActions
             editHref={`/cadastros/contabilidades/${row.id}`}
-            onDelete={() => handleDelete(row.id, row.razaoSocial)}
+            onDelete={() => deleteMutation.mutate(row.id)}
             deleteTitle="Remover contabilidade"
-            deleteDescription={`Remover "${row.razaoSocial}" da base? As empresas vinculadas ficam sem contabilidade responsável.`}
-            extra={[
-              {
-                label: 'Ver empresas vinculadas',
-                onClick: () => toast.info('Filtro por contabilidade (mock)'),
-              },
-            ]}
+            deleteDescription={`Remover "${row.nome}"? As empresas vinculadas ficam sem contabilidade responsável.`}
           />
         )}
         page={page}
-        pageSize={10}
+        pageSize={pageSize}
         onPageChange={setPage}
         totalLabelSingular="contabilidade"
         totalLabelPlural="contabilidades"
-        emptyTitle="Nenhuma contabilidade"
-        emptyDescription="Ajuste os filtros ou cadastre uma nova contabilidade."
+        emptyTitle={isLoading ? 'Carregando...' : 'Nenhuma contabilidade'}
+        emptyDescription="Ajuste a busca ou cadastre uma nova contabilidade."
       />
     </div>
   );

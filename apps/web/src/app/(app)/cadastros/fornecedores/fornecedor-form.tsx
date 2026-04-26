@@ -1,143 +1,172 @@
 'use client';
 
+/**
+ * Formulário de Fornecedor — Plan 02-07 Task 3.
+ *
+ * Migrado de fixture mock para API real via @nexo/shared FornecedorCreateSchema.
+ * Inclui CnpjAutofillButton + useCepAutofill + DuplicateWarning ('fornecedores').
+ */
+
+import { CepAutofillIndicator, useCepAutofill } from '@/components/cadastros/cep-autofill';
+import { CnpjAutofillButton } from '@/components/cadastros/cnpj-autofill-button';
+import { DuplicateWarning } from '@/components/cadastros/duplicate-warning';
 import { FormSection } from '@/components/cadastros/form-section';
 import { FormToolbar } from '@/components/cadastros/form-toolbar';
 import { FormField } from '@/components/forms/form-field';
 import { MaskedInput } from '@/components/forms/masked-input';
 import { UfSelect } from '@/components/forms/uf-select';
-import type { Fornecedor } from '@/lib/mock-data';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { FornecedorCreateSchema, type FornecedorCreateInput } from '@nexo/shared';
 import { Input, cn } from '@nexo/ui';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
 
-const formasPagamento = ['Boleto', 'PIX', 'Transferência', 'Cartão', 'Dinheiro'] as const;
+export interface FornecedorInitial extends Partial<FornecedorCreateInput> {
+  id?: string;
+  ativo?: boolean;
+}
 
-const schema = z.object({
-  cnpj: z.string().refine((v) => v.replace(/\D/g, '').length === 14, 'CNPJ inválido.'),
-  razaoSocial: z.string().min(3, 'Informe a razão social.'),
-  nomeFantasia: z.string().optional(),
-  ie: z.string().optional(),
-  cep: z.string().optional(),
-  logradouro: z.string().optional(),
-  numero: z.string().optional(),
-  bairro: z.string().optional(),
-  cidade: z.string().min(2, 'Informe a cidade.'),
-  uf: z.string().length(2, 'Selecione a UF.'),
-  email: z
-    .string()
-    .optional()
-    .refine((v) => !v || /\S+@\S+\.\S+/.test(v), 'E-mail inválido.'),
-  telefone: z.string().optional(),
-  contatoComercial: z.string().optional(),
-  prazoPagamento: z
-    .string()
-    .optional()
-    .refine((v) => !v || /^\d+$/.test(v), 'Informe apenas números (dias).'),
-  formaPreferida: z.enum(formasPagamento),
-  observacoes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof schema>;
-
-const defaultValues: FormValues = {
-  cnpj: '',
+const defaultValues: FornecedorCreateInput = {
+  cpfCnpj: '',
   razaoSocial: '',
   nomeFantasia: '',
-  ie: '',
-  cep: '',
-  logradouro: '',
-  numero: '',
-  bairro: '',
-  cidade: '',
-  uf: '',
+  inscricaoEst: '',
+  endereco: {
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cep: '',
+    cidade: '',
+    uf: '',
+  },
   email: '',
   telefone: '',
   contatoComercial: '',
-  prazoPagamento: '30',
-  formaPreferida: 'Boleto',
-  observacoes: '',
+  condicoesPadrao: null,
 };
 
-function buildInitial(f?: Fornecedor): FormValues {
-  if (!f) return defaultValues;
+function buildInitial(initial?: FornecedorInitial): FornecedorCreateInput {
+  if (!initial) return defaultValues;
   return {
     ...defaultValues,
-    cnpj: f.cnpj,
-    razaoSocial: f.razaoSocial,
-    nomeFantasia: f.razaoSocial.split(' ')[0],
-    ie: '123.456.789.012',
-    cep: '04000-000',
-    logradouro: 'Av. Brasil',
-    numero: '1000',
-    bairro: 'Centro',
-    cidade: f.cidade,
-    uf: f.uf,
-    email: `contato@${f.razaoSocial.toLowerCase().split(' ')[0]}.com.br`,
-    telefone: '(51) 3000-4000',
-    contatoComercial: 'Roberto Campos',
-    prazoPagamento: '30',
-    formaPreferida: 'Boleto',
+    ...initial,
+    endereco: {
+      ...defaultValues.endereco,
+      ...(initial.endereco ?? {}),
+    },
   };
 }
 
 export interface FornecedorFormProps {
   mode: 'create' | 'edit';
-  initial?: Fornecedor;
+  initial?: FornecedorInitial;
 }
 
 export function FornecedorForm({ mode, initial }: FornecedorFormProps) {
   const router = useRouter();
+  const qc = useQueryClient();
+
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  } = useForm<FornecedorCreateInput>({
+    resolver: zodResolver(FornecedorCreateSchema) as Resolver<FornecedorCreateInput>,
     defaultValues: buildInitial(initial),
   });
 
-  const onSubmit = handleSubmit(async () => {
-    await new Promise((r) => setTimeout(r, 400));
-    toast.success(mode === 'create' ? 'Fornecedor criado (mock)' : 'Fornecedor atualizado (mock)');
-    if (mode === 'create') router.push('/cadastros/fornecedores');
+  const cnpj = useWatch({ control, name: 'cpfCnpj' }) ?? '';
+  const cep = useWatch({ control, name: 'endereco.cep' }) ?? '';
+
+  const { loading: cepLoading } = useCepAutofill(cep, (data) => {
+    if (data.logradouro) setValue('endereco.logradouro', data.logradouro);
+    if (data.bairro) setValue('endereco.bairro', data.bairro);
+    if (data.cidade) setValue('endereco.cidade', data.cidade);
+    if (data.uf) setValue('endereco.uf', data.uf);
   });
+
+  const mutation = useMutation({
+    mutationFn: async (dto: FornecedorCreateInput) => {
+      const url =
+        mode === 'create' ? '/api/fornecedores' : `/api/fornecedores/${initial?.id}`;
+      const res = await fetch(url, {
+        method: mode === 'create' ? 'POST' : 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dto),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 409 && body.code === 'DUPLICATE_RESOURCE') {
+          throw new Error('Já existe um fornecedor com esse CNPJ neste tenant.');
+        }
+        throw new Error(body.message ?? 'Erro ao salvar fornecedor');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fornecedores'] });
+      qc.invalidateQueries({ queryKey: ['fornecedor'] });
+      toast.success(mode === 'create' ? 'Fornecedor criado' : 'Fornecedor atualizado');
+      router.push('/cadastros/fornecedores');
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
+  const onSubmit = handleSubmit((dto) => mutation.mutate(dto));
 
   const title =
     mode === 'create'
       ? 'Novo fornecedor'
-      : `Editar fornecedor${initial ? ` · ${initial.razaoSocial}` : ''}`;
+      : `Editar fornecedor${initial?.razaoSocial ? ` · ${initial.razaoSocial}` : ''}`;
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <FormToolbar
         title={title}
-        subtitle="Parceiro comercial com histórico de compras e condições padrão."
+        subtitle="Parceiro comercial com histórico de XMLs e condições padrão."
         backHref="/cadastros/fornecedores"
         onCancel={() => router.push('/cadastros/fornecedores')}
-        onSaveDraft={() => toast.message('Rascunho salvo (mock)')}
         onSubmit={() => void onSubmit()}
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || mutation.isPending}
         submitLabel={mode === 'create' ? 'Criar fornecedor' : 'Salvar alterações'}
       />
 
       <FormSection title="Dados do fornecedor">
-        <FormField label="CNPJ" required error={errors.cnpj?.message}>
-          <Controller
-            control={control}
-            name="cnpj"
-            render={({ field }) => (
-              <MaskedInput
-                mask="cnpj"
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="00.000.000/0000-00"
-              />
-            )}
-          />
+        <FormField label="CNPJ" required error={errors.cpfCnpj?.message}>
+          <div className="flex gap-2">
+            <Controller
+              control={control}
+              name="cpfCnpj"
+              render={({ field }) => (
+                <MaskedInput
+                  mask="cnpj"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="00.000.000/0000-00"
+                />
+              )}
+            />
+            <CnpjAutofillButton
+              cnpj={cnpj}
+              onAutofill={(data) => {
+                setValue('razaoSocial', data.razaoSocial);
+                if (data.nomeFantasia) setValue('nomeFantasia', data.nomeFantasia);
+                if (data.endereco.cep) setValue('endereco.cep', data.endereco.cep);
+                if (data.endereco.logradouro)
+                  setValue('endereco.logradouro', data.endereco.logradouro);
+                if (data.endereco.numero) setValue('endereco.numero', data.endereco.numero);
+                if (data.endereco.bairro) setValue('endereco.bairro', data.endereco.bairro);
+                if (data.endereco.cidade) setValue('endereco.cidade', data.endereco.cidade);
+                if (data.endereco.uf) setValue('endereco.uf', data.endereco.uf);
+              }}
+            />
+          </div>
+          <DuplicateWarning resource="fornecedores" cpfCnpj={cnpj} ignoreId={initial?.id} />
         </FormField>
         <FormField label="Razão social" required error={errors.razaoSocial?.message}>
           <Input {...register('razaoSocial')} placeholder="Distribuidora Sul Brasil LTDA" />
@@ -145,47 +174,51 @@ export function FornecedorForm({ mode, initial }: FornecedorFormProps) {
         <FormField label="Nome fantasia" error={errors.nomeFantasia?.message}>
           <Input {...register('nomeFantasia')} placeholder="Sul Brasil" />
         </FormField>
-        <FormField
-          label="Inscrição Estadual"
-          error={errors.ie?.message}
-          hint="Obrigatória para emitir XML de compra correto."
-        >
-          <Input {...register('ie')} placeholder="000.000.000.000" />
+        <FormField label="Inscrição Estadual" error={errors.inscricaoEst?.message}>
+          <Input {...register('inscricaoEst')} placeholder="000.000.000.000" />
         </FormField>
       </FormSection>
 
-      <FormSection title="Endereço">
-        <FormField label="CEP" error={errors.cep?.message}>
+      <FormSection title="Endereço" description="Auto-preenchido pelo CEP via ViaCEP.">
+        <FormField label="CEP" error={errors.endereco?.cep?.message}>
+          <div className="flex items-center gap-2">
+            <Controller
+              control={control}
+              name="endereco.cep"
+              render={({ field }) => (
+                <MaskedInput
+                  mask="cep"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="00000-000"
+                />
+              )}
+            />
+            <CepAutofillIndicator loading={cepLoading} />
+          </div>
+        </FormField>
+        <FormField label="Logradouro" error={errors.endereco?.logradouro?.message}>
+          <Input {...register('endereco.logradouro')} placeholder="Av. Brasil" />
+        </FormField>
+        <FormField label="Número" error={errors.endereco?.numero?.message}>
+          <Input {...register('endereco.numero')} placeholder="1000" />
+        </FormField>
+        <FormField label="Complemento" error={errors.endereco?.complemento?.message}>
+          <Input {...register('endereco.complemento')} placeholder="Bloco A" />
+        </FormField>
+        <FormField label="Bairro" error={errors.endereco?.bairro?.message}>
+          <Input {...register('endereco.bairro')} placeholder="Centro" />
+        </FormField>
+        <FormField label="Cidade" required error={errors.endereco?.cidade?.message}>
+          <Input {...register('endereco.cidade')} placeholder="Porto Alegre" />
+        </FormField>
+        <FormField label="UF" required error={errors.endereco?.uf?.message}>
           <Controller
             control={control}
-            name="cep"
+            name="endereco.uf"
             render={({ field }) => (
-              <MaskedInput
-                mask="cep"
-                value={field.value ?? ''}
-                onChange={field.onChange}
-                placeholder="00000-000"
-              />
+              <UfSelect value={field.value ?? ''} onChange={field.onChange} />
             )}
-          />
-        </FormField>
-        <FormField label="Logradouro" error={errors.logradouro?.message}>
-          <Input {...register('logradouro')} placeholder="Av. Brasil" />
-        </FormField>
-        <FormField label="Número" error={errors.numero?.message}>
-          <Input {...register('numero')} placeholder="1000" />
-        </FormField>
-        <FormField label="Bairro" error={errors.bairro?.message}>
-          <Input {...register('bairro')} placeholder="Centro" />
-        </FormField>
-        <FormField label="Cidade" required error={errors.cidade?.message}>
-          <Input {...register('cidade')} placeholder="Porto Alegre" />
-        </FormField>
-        <FormField label="UF" required error={errors.uf?.message}>
-          <Controller
-            control={control}
-            name="uf"
-            render={({ field }) => <UfSelect value={field.value} onChange={field.onChange} />}
           />
         </FormField>
       </FormSection>
@@ -208,46 +241,6 @@ export function FornecedorForm({ mode, initial }: FornecedorFormProps) {
                 onChange={field.onChange}
                 placeholder="(51) 3000-0000"
               />
-            )}
-          />
-        </FormField>
-      </FormSection>
-
-      <FormSection title="Condições padrão">
-        <FormField
-          label="Prazo de pagamento (dias)"
-          error={errors.prazoPagamento?.message}
-          hint="Número de dias úteis para vencimento padrão."
-        >
-          <Input {...register('prazoPagamento')} inputMode="numeric" placeholder="30" />
-        </FormField>
-        <FormField label="Forma preferida" error={errors.formaPreferida?.message}>
-          <select
-            {...register('formaPreferida')}
-            className={cn(
-              'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            )}
-          >
-            {formasPagamento.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
-        </FormField>
-        <FormField
-          label="Observações"
-          className="md:col-span-2"
-          error={errors.observacoes?.message}
-        >
-          <textarea
-            {...register('observacoes')}
-            rows={3}
-            placeholder="Notas internas sobre o fornecedor."
-            className={cn(
-              'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             )}
           />
         </FormField>

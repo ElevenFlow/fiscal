@@ -1,134 +1,142 @@
 'use client';
 
+/**
+ * Formulário de Cliente PF/PJ — Plan 02-07 Task 3.
+ *
+ * Migrado de fixture mock para API real:
+ *  - Schema de @nexo/shared (ClienteCreateSchema) é o resolver do RHF.
+ *  - useMutation chama Route Handler /api/clientes (POST/PATCH); 409 → toast amigável.
+ *  - CnpjAutofillButton (PJ) chama /api/integrations/cnpj/:cnpj e popula campos.
+ *  - useCepAutofill (debounce 500ms) preenche endereço a partir do CEP.
+ *  - DuplicateWarning aparece embaixo do CPF/CNPJ se já houver no tenant.
+ */
+
+import { CepAutofillIndicator, useCepAutofill } from '@/components/cadastros/cep-autofill';
+import { CnpjAutofillButton } from '@/components/cadastros/cnpj-autofill-button';
+import { DuplicateWarning } from '@/components/cadastros/duplicate-warning';
 import { FormSection } from '@/components/cadastros/form-section';
 import { FormToolbar } from '@/components/cadastros/form-toolbar';
 import { FormField } from '@/components/forms/form-field';
 import { MaskedInput } from '@/components/forms/masked-input';
 import { UfSelect } from '@/components/forms/uf-select';
-import type { Cliente } from '@/lib/mock-data';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { ClienteCreateSchema, type ClienteCreateInput } from '@nexo/shared';
 import { Input, cn } from '@nexo/ui';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
 
-const tipoEnum = ['PF', 'PJ'] as const;
+const tipoEnum = ['fisica', 'juridica'] as const;
 const contribuinteEnum = ['sim', 'nao', 'isento'] as const;
 
-const schema = z
-  .object({
-    tipo: z.enum(tipoEnum),
-    // Comum
-    documento: z.string().min(11, 'Informe CPF ou CNPJ.'),
-    nome: z.string().min(2, 'Informe o nome / razão social.'),
-    email: z
-      .string()
-      .optional()
-      .refine((v) => !v || /\S+@\S+\.\S+/.test(v), 'E-mail inválido.'),
-    telefone: z.string().optional(),
-    // Endereço
-    cep: z.string().optional(),
-    logradouro: z.string().optional(),
-    numero: z.string().optional(),
-    bairro: z.string().optional(),
-    cidade: z.string().min(2, 'Informe a cidade.'),
-    uf: z.string().length(2, 'Selecione a UF.'),
-    // PF
-    rg: z.string().optional(),
-    nascimento: z.string().optional(),
-    // PJ
-    ie: z.string().optional(),
-    im: z.string().optional(),
-    nomeFantasia: z.string().optional(),
-    contato: z.string().optional(),
-    // Fiscal
-    contribuinteIcms: z.enum(contribuinteEnum),
-    regimeEspecial: z.string().optional(),
-    observacoes: z.string().optional(),
-  })
-  .superRefine((val, ctx) => {
-    const digits = val.documento.replace(/\D/g, '');
-    if (val.tipo === 'PF' && digits.length !== 11) {
-      ctx.addIssue({ code: 'custom', path: ['documento'], message: 'CPF inválido.' });
-    }
-    if (val.tipo === 'PJ' && digits.length !== 14) {
-      ctx.addIssue({ code: 'custom', path: ['documento'], message: 'CNPJ inválido.' });
-    }
-  });
+export interface ClienteInitial extends Partial<ClienteCreateInput> {
+  id?: string;
+  ativo?: boolean;
+}
 
-type FormValues = z.infer<typeof schema>;
-
-const defaultValues: FormValues = {
-  tipo: 'PJ',
-  documento: '',
+const defaultValues: ClienteCreateInput = {
+  tipoPessoa: 'juridica',
+  cpfCnpj: '',
   nome: '',
+  nomeFantasia: '',
+  inscricaoEst: '',
+  inscricaoMun: '',
+  contribuinteIcms: 'nao',
+  endereco: {
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cep: '',
+    cidade: '',
+    uf: '',
+  },
   email: '',
   telefone: '',
-  cep: '',
-  logradouro: '',
-  numero: '',
-  bairro: '',
-  cidade: '',
-  uf: '',
-  rg: '',
-  nascimento: '',
-  ie: '',
-  im: '',
-  nomeFantasia: '',
-  contato: '',
-  contribuinteIcms: 'nao',
-  regimeEspecial: '',
   observacoes: '',
 };
 
-function buildInitial(c?: Cliente): FormValues {
-  if (!c) return defaultValues;
+function buildInitial(initial?: ClienteInitial): ClienteCreateInput {
+  if (!initial) return defaultValues;
   return {
     ...defaultValues,
-    tipo: c.tipo,
-    documento: c.documento,
-    nome: c.nome,
-    email: c.email ?? '',
-    telefone: c.telefone ?? '',
-    cidade: c.cidade,
-    uf: c.uf,
-    cep: '01310-100',
-    logradouro: 'Av. Paulista',
-    numero: '1500',
-    bairro: 'Bela Vista',
-    contribuinteIcms: c.tipo === 'PJ' ? 'sim' : 'nao',
+    ...initial,
+    endereco: {
+      ...defaultValues.endereco,
+      ...(initial.endereco ?? {}),
+    },
   };
 }
 
 export interface ClienteFormProps {
   mode: 'create' | 'edit';
-  initial?: Cliente;
+  initial?: ClienteInitial;
 }
 
 export function ClienteForm({ mode, initial }: ClienteFormProps) {
   const router = useRouter();
+  const qc = useQueryClient();
+
   const {
     register,
     handleSubmit,
     control,
-    watch,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  } = useForm<ClienteCreateInput>({
+    // Cast: ClienteCreateSchema usa .transform() em cpfCnpjValidatedSchema
+    // (input string com máscara → output dígitos). Resolver internamente devolve
+    // o output, mas o form opera com input — cast é seguro porque RHF passa
+    // o valor digitado direto ao Zod parse no submit.
+    resolver: zodResolver(ClienteCreateSchema) as Resolver<ClienteCreateInput>,
     defaultValues: buildInitial(initial),
   });
 
-  const tipo = watch('tipo');
+  const tipoPessoa = useWatch({ control, name: 'tipoPessoa' });
+  const cpfCnpj = useWatch({ control, name: 'cpfCnpj' }) ?? '';
+  const cep = useWatch({ control, name: 'endereco.cep' }) ?? '';
 
-  const onSubmit = handleSubmit(async () => {
-    await new Promise((r) => setTimeout(r, 400));
-    toast.success(mode === 'create' ? 'Cliente criado (mock)' : 'Cliente atualizado (mock)');
-    if (mode === 'create') router.push('/cadastros/clientes');
+  const { loading: cepLoading } = useCepAutofill(cep, (data) => {
+    if (data.logradouro) setValue('endereco.logradouro', data.logradouro);
+    if (data.bairro) setValue('endereco.bairro', data.bairro);
+    if (data.cidade) setValue('endereco.cidade', data.cidade);
+    if (data.uf) setValue('endereco.uf', data.uf);
   });
 
+  const mutation = useMutation({
+    mutationFn: async (dto: ClienteCreateInput) => {
+      const url =
+        mode === 'create' ? '/api/clientes' : `/api/clientes/${initial?.id}`;
+      const res = await fetch(url, {
+        method: mode === 'create' ? 'POST' : 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dto),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 409 && body.code === 'DUPLICATE_RESOURCE') {
+          throw new Error('Já existe um cliente com esse CPF/CNPJ neste tenant.');
+        }
+        throw new Error(body.message ?? 'Erro ao salvar cliente');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clientes'] });
+      qc.invalidateQueries({ queryKey: ['cliente'] });
+      toast.success(mode === 'create' ? 'Cliente criado' : 'Cliente atualizado');
+      router.push('/cadastros/clientes');
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
+  const onSubmit = handleSubmit((dto) => mutation.mutate(dto));
+
   const title =
-    mode === 'create' ? 'Novo cliente' : `Editar cliente${initial ? ` · ${initial.nome}` : ''}`;
+    mode === 'create'
+      ? 'Novo cliente'
+      : `Editar cliente${initial?.nome ? ` · ${initial.nome}` : ''}`;
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -137,9 +145,8 @@ export function ClienteForm({ mode, initial }: ClienteFormProps) {
         subtitle="Base única de destinatários para emissão de NFS-e e NF-e."
         backHref="/cadastros/clientes"
         onCancel={() => router.push('/cadastros/clientes')}
-        onSaveDraft={() => toast.message('Rascunho salvo (mock)')}
         onSubmit={() => void onSubmit()}
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || mutation.isPending}
         submitLabel={mode === 'create' ? 'Criar cliente' : 'Salvar alterações'}
       />
 
@@ -147,7 +154,7 @@ export function ClienteForm({ mode, initial }: ClienteFormProps) {
       <div className="flex items-center gap-2">
         <Controller
           control={control}
-          name="tipo"
+          name="tipoPessoa"
           render={({ field }) => (
             <div
               className="inline-flex rounded-md border bg-background p-1 text-sm"
@@ -168,7 +175,7 @@ export function ClienteForm({ mode, initial }: ClienteFormProps) {
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {t === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
+                  {t === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
                 </button>
               ))}
             </div>
@@ -177,69 +184,78 @@ export function ClienteForm({ mode, initial }: ClienteFormProps) {
       </div>
 
       <FormSection
-        title={tipo === 'PF' ? 'Dados pessoais' : 'Dados da empresa'}
+        title={tipoPessoa === 'fisica' ? 'Dados pessoais' : 'Dados da empresa'}
         description={
-          tipo === 'PF' ? 'Identificação da pessoa física.' : 'Identificação da pessoa jurídica.'
+          tipoPessoa === 'fisica'
+            ? 'Identificação da pessoa física.'
+            : 'Identificação da pessoa jurídica.'
         }
       >
         <FormField
-          label={tipo === 'PF' ? 'CPF' : 'CNPJ'}
+          label={tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ'}
           required
-          error={errors.documento?.message}
+          error={errors.cpfCnpj?.message}
         >
-          <Controller
-            control={control}
-            name="documento"
-            render={({ field }) => (
-              <MaskedInput
-                mask={tipo === 'PF' ? 'cpf' : 'cnpj'}
-                value={field.value}
-                onChange={field.onChange}
-                placeholder={tipo === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'}
+          <div className="flex gap-2">
+            <Controller
+              control={control}
+              name="cpfCnpj"
+              render={({ field }) => (
+                <MaskedInput
+                  mask={tipoPessoa === 'fisica' ? 'cpf' : 'cnpj'}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={tipoPessoa === 'fisica' ? '000.000.000-00' : '00.000.000/0000-00'}
+                />
+              )}
+            />
+            {tipoPessoa === 'juridica' ? (
+              <CnpjAutofillButton
+                cnpj={cpfCnpj}
+                onAutofill={(data) => {
+                  setValue('nome', data.razaoSocial);
+                  if (data.nomeFantasia) setValue('nomeFantasia', data.nomeFantasia);
+                  if (data.endereco.cep) setValue('endereco.cep', data.endereco.cep);
+                  if (data.endereco.logradouro)
+                    setValue('endereco.logradouro', data.endereco.logradouro);
+                  if (data.endereco.numero) setValue('endereco.numero', data.endereco.numero);
+                  if (data.endereco.bairro) setValue('endereco.bairro', data.endereco.bairro);
+                  if (data.endereco.cidade) setValue('endereco.cidade', data.endereco.cidade);
+                  if (data.endereco.uf) setValue('endereco.uf', data.endereco.uf);
+                }}
               />
-            )}
-          />
+            ) : null}
+          </div>
+          <DuplicateWarning resource="clientes" cpfCnpj={cpfCnpj} ignoreId={initial?.id} />
         </FormField>
         <FormField
-          label={tipo === 'PF' ? 'Nome completo' : 'Razão social'}
+          label={tipoPessoa === 'fisica' ? 'Nome completo' : 'Razão social'}
           required
           error={errors.nome?.message}
         >
           <Input
             {...register('nome')}
-            placeholder={tipo === 'PF' ? 'Carlos Ferreira' : 'Construtora Horizonte LTDA'}
+            placeholder={tipoPessoa === 'fisica' ? 'Carlos Ferreira' : 'Construtora Horizonte LTDA'}
           />
         </FormField>
 
-        {tipo === 'PF' ? (
-          <>
-            <FormField label="RG" error={errors.rg?.message}>
-              <Input {...register('rg')} placeholder="12.345.678-9" />
-            </FormField>
-            <FormField label="Data de nascimento" error={errors.nascimento?.message}>
-              <Input type="date" {...register('nascimento')} />
-            </FormField>
-          </>
-        ) : (
+        {tipoPessoa === 'juridica' ? (
           <>
             <FormField label="Nome fantasia" error={errors.nomeFantasia?.message}>
               <Input {...register('nomeFantasia')} placeholder="Horizonte" />
             </FormField>
             <FormField
               label="Inscrição Estadual"
-              error={errors.ie?.message}
+              error={errors.inscricaoEst?.message}
               hint="Deixe em branco se isento."
             >
-              <Input {...register('ie')} placeholder="000.000.000.000" />
+              <Input {...register('inscricaoEst')} placeholder="000.000.000.000" />
             </FormField>
-            <FormField label="Inscrição Municipal" error={errors.im?.message}>
-              <Input {...register('im')} placeholder="0000000-0" />
-            </FormField>
-            <FormField label="Contato comercial" error={errors.contato?.message}>
-              <Input {...register('contato')} placeholder="Fernanda Lima" />
+            <FormField label="Inscrição Municipal" error={errors.inscricaoMun?.message}>
+              <Input {...register('inscricaoMun')} placeholder="0000000-0" />
             </FormField>
           </>
-        )}
+        ) : null}
       </FormSection>
 
       <FormSection title="Contato">
@@ -262,38 +278,46 @@ export function ClienteForm({ mode, initial }: ClienteFormProps) {
         </FormField>
       </FormSection>
 
-      <FormSection title="Endereço" description="Usado como endereço padrão de entrega / fatura.">
-        <FormField label="CEP" error={errors.cep?.message}>
+      <FormSection title="Endereço" description="Auto-preenchido pelo CEP via ViaCEP.">
+        <FormField label="CEP" error={errors.endereco?.cep?.message}>
+          <div className="flex items-center gap-2">
+            <Controller
+              control={control}
+              name="endereco.cep"
+              render={({ field }) => (
+                <MaskedInput
+                  mask="cep"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="00000-000"
+                />
+              )}
+            />
+            <CepAutofillIndicator loading={cepLoading} />
+          </div>
+        </FormField>
+        <FormField label="Logradouro" error={errors.endereco?.logradouro?.message}>
+          <Input {...register('endereco.logradouro')} placeholder="Av. Paulista" />
+        </FormField>
+        <FormField label="Número" error={errors.endereco?.numero?.message}>
+          <Input {...register('endereco.numero')} placeholder="1000" />
+        </FormField>
+        <FormField label="Complemento" error={errors.endereco?.complemento?.message}>
+          <Input {...register('endereco.complemento')} placeholder="Sala 10" />
+        </FormField>
+        <FormField label="Bairro" error={errors.endereco?.bairro?.message}>
+          <Input {...register('endereco.bairro')} placeholder="Bela Vista" />
+        </FormField>
+        <FormField label="Cidade" required error={errors.endereco?.cidade?.message}>
+          <Input {...register('endereco.cidade')} placeholder="São Paulo" />
+        </FormField>
+        <FormField label="UF" required error={errors.endereco?.uf?.message}>
           <Controller
             control={control}
-            name="cep"
+            name="endereco.uf"
             render={({ field }) => (
-              <MaskedInput
-                mask="cep"
-                value={field.value ?? ''}
-                onChange={field.onChange}
-                placeholder="00000-000"
-              />
+              <UfSelect value={field.value ?? ''} onChange={field.onChange} />
             )}
-          />
-        </FormField>
-        <FormField label="Logradouro" error={errors.logradouro?.message}>
-          <Input {...register('logradouro')} placeholder="Av. Paulista" />
-        </FormField>
-        <FormField label="Número" error={errors.numero?.message}>
-          <Input {...register('numero')} placeholder="1000" />
-        </FormField>
-        <FormField label="Bairro" error={errors.bairro?.message}>
-          <Input {...register('bairro')} placeholder="Bela Vista" />
-        </FormField>
-        <FormField label="Cidade" required error={errors.cidade?.message}>
-          <Input {...register('cidade')} placeholder="São Paulo" />
-        </FormField>
-        <FormField label="UF" required error={errors.uf?.message}>
-          <Controller
-            control={control}
-            name="uf"
-            render={({ field }) => <UfSelect value={field.value} onChange={field.onChange} />}
           />
         </FormField>
       </FormSection>
@@ -302,7 +326,11 @@ export function ClienteForm({ mode, initial }: ClienteFormProps) {
         title="Observações fiscais"
         description="Dados que afetam destaque de imposto e obrigações acessórias."
       >
-        <FormField label="Contribuinte de ICMS" required error={errors.contribuinteIcms?.message}>
+        <FormField
+          label="Contribuinte de ICMS"
+          required
+          error={errors.contribuinteIcms?.message}
+        >
           <select
             {...register('contribuinteIcms')}
             className={cn(
@@ -310,13 +338,12 @@ export function ClienteForm({ mode, initial }: ClienteFormProps) {
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             )}
           >
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>
-            <option value="isento">Isento</option>
+            {contribuinteEnum.map((c) => (
+              <option key={c} value={c}>
+                {c === 'sim' ? 'Sim' : c === 'nao' ? 'Não' : 'Isento'}
+              </option>
+            ))}
           </select>
-        </FormField>
-        <FormField label="Regime especial" error={errors.regimeEspecial?.message}>
-          <Input {...register('regimeEspecial')} placeholder="Ex: Simples, Substituto Tributário" />
         </FormField>
         <FormField
           label="Observações"

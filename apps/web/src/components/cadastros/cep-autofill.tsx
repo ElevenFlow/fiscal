@@ -11,6 +11,7 @@
  * setTimeout cleanup cancela request se cep mudar antes dos 500ms.
  */
 
+import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -58,4 +59,17 @@ export function useCepAutofill(
   }, [cep, onAutofill]);
 
   return { loading };
+}
+
+/**
+ * Indicador visual de loading do useCepAutofill — usado em forms ao lado do
+ * campo CEP. Apenas exibe ícone giratório quando loading=true.
+ */
+export function CepAutofillIndicator({ loading }: { loading: boolean }) {
+  if (!loading) return null;
+  return (
+    <span className="inline-flex h-9 items-center text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" aria-label="Buscando CEP..." />
+    </span>
+  );
 }

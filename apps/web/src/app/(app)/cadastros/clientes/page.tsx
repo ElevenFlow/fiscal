@@ -1,57 +1,97 @@
 'use client';
 
+/**
+ * Listagem de Clientes — Plan 02-07 Task 3.
+ *
+ * Substituiu fixture mock-data por TanStack Query (`useQuery`) chamando
+ * Route Handler `/api/clientes` (proxy Bearer Clerk server-side).
+ *
+ * Filtros (search, tipoPessoa, uf) entram no queryKey → server-side filtering.
+ * Soft delete via `useMutation` + `qc.invalidateQueries` (refetch).
+ */
+
 import { DataTable, type DataTableColumn } from '@/components/cadastros/data-table';
 import { RowActions } from '@/components/cadastros/row-actions';
 import { UfSelect } from '@/components/forms/uf-select';
-import { type Cliente, clientes as fixture } from '@/lib/mock-data';
 import { Badge, Button, cn } from '@nexo/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
-const TIPOS: Array<{ value: Cliente['tipo'] | ''; label: string }> = [
+interface ClienteListItem {
+  id: string;
+  tipoPessoa: 'fisica' | 'juridica';
+  cpfCnpj: string;
+  nome: string;
+  email: string | null;
+  telefone: string | null;
+  endereco: { cidade?: string; uf?: string } | null;
+  ativo: boolean;
+  createdAt: string;
+}
+
+interface PageResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+const TIPOS: Array<{ value: 'fisica' | 'juridica' | ''; label: string }> = [
   { value: '', label: 'PF e PJ' },
-  { value: 'PF', label: 'Pessoa Física' },
-  { value: 'PJ', label: 'Pessoa Jurídica' },
+  { value: 'fisica', label: 'Pessoa Física' },
+  { value: 'juridica', label: 'Pessoa Jurídica' },
 ];
 
 export default function ClientesListPage() {
-  const [rows, setRows] = useState(fixture);
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
-  const [tipo, setTipo] = useState<Cliente['tipo'] | ''>('');
+  const [tipoPessoa, setTipoPessoa] = useState<'fisica' | 'juridica' | ''>('');
   const [uf, setUf] = useState('');
   const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return rows.filter((c) => {
-      if (term) {
-        const match =
-          c.nome.toLowerCase().includes(term) ||
-          c.documento.includes(term) ||
-          (c.email?.toLowerCase().includes(term) ?? false);
-        if (!match) return false;
-      }
-      if (tipo && c.tipo !== tipo) return false;
-      if (uf && c.uf !== uf) return false;
-      return true;
-    });
-  }, [rows, search, tipo, uf]);
+  const { data, isLoading } = useQuery<PageResult<ClienteListItem>>({
+    queryKey: ['clientes', { page, pageSize, search, tipoPessoa, uf }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        ...(search ? { search } : {}),
+        ...(tipoPessoa ? { tipoPessoa } : {}),
+        ...(uf ? { uf } : {}),
+      });
+      const res = await fetch(`/api/clientes?${params}`);
+      if (!res.ok) throw new Error('Falha ao carregar clientes');
+      return (await res.json()) as PageResult<ClienteListItem>;
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error('Falha ao excluir');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clientes'] });
+      toast.success('Cliente desativado');
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   const clearFilters = () => {
     setSearch('');
-    setTipo('');
+    setTipoPessoa('');
     setUf('');
     setPage(1);
   };
 
-  const handleDelete = (id: string, nome: string) => {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-    toast.success(`Cliente "${nome}" removido (mock)`);
-  };
-
-  const columns: DataTableColumn<Cliente>[] = [
+  const columns: DataTableColumn<ClienteListItem>[] = [
     {
       key: 'nome',
       header: 'Nome / Razão',
@@ -63,40 +103,45 @@ export default function ClientesListPage() {
       ),
     },
     {
-      key: 'documento',
+      key: 'cpfCnpj',
       header: 'CPF / CNPJ',
-      render: (c) => <span className="font-mono text-xs">{c.documento}</span>,
+      render: (c) => <span className="font-mono text-xs">{c.cpfCnpj}</span>,
     },
     {
-      key: 'tipo',
+      key: 'tipoPessoa',
       header: 'Tipo',
       render: (c) => (
         <Badge
           variant="secondary"
           className={cn(
             'font-medium',
-            c.tipo === 'PJ' && 'bg-brand-blue/10 text-brand-blue',
-            c.tipo === 'PF' && 'bg-brand-green/10 text-brand-green',
+            c.tipoPessoa === 'juridica' && 'bg-brand-blue/10 text-brand-blue',
+            c.tipoPessoa === 'fisica' && 'bg-brand-green/10 text-brand-green',
           )}
         >
-          {c.tipo}
+          {c.tipoPessoa === 'juridica' ? 'PJ' : 'PF'}
         </Badge>
       ),
     },
     {
       key: 'local',
       header: 'Cidade / UF',
-      render: (c) => (
-        <span>
-          {c.cidade}/<span className="font-semibold">{c.uf}</span>
-        </span>
-      ),
+      render: (c) => {
+        const cidade = c.endereco?.cidade ?? '—';
+        const ufVal = c.endereco?.uf ?? '—';
+        return (
+          <span>
+            {cidade}/<span className="font-semibold">{ufVal}</span>
+          </span>
+        );
+      },
     },
     {
-      key: 'ultimaCompra',
-      header: 'Última compra',
+      key: 'createdAt',
+      header: 'Cadastrado em',
       className: 'text-xs text-muted-foreground',
-      render: (c) => c.ultimaCompra ?? '—',
+      render: (c) =>
+        c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '—',
     },
   ];
 
@@ -106,7 +151,9 @@ export default function ClientesListPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
           <p className="text-muted-foreground">
-            {filtered.length} {filtered.length === 1 ? 'cliente' : 'clientes'} na base.
+            {isLoading
+              ? 'Carregando...'
+              : `${total} ${total === 1 ? 'cliente' : 'clientes'} na base.`}
           </p>
         </div>
         <Button asChild>
@@ -118,7 +165,7 @@ export default function ClientesListPage() {
       </div>
 
       <DataTable
-        rows={filtered}
+        rows={rows}
         columns={columns}
         getRowId={(c) => c.id}
         search={search}
@@ -130,9 +177,9 @@ export default function ClientesListPage() {
         filters={
           <>
             <select
-              value={tipo}
+              value={tipoPessoa}
               onChange={(e) => {
-                setTipo(e.target.value as Cliente['tipo'] | '');
+                setTipoPessoa(e.target.value as 'fisica' | 'juridica' | '');
                 setPage(1);
               }}
               className={cn(
@@ -161,23 +208,23 @@ export default function ClientesListPage() {
         actions={(row) => (
           <RowActions
             editHref={`/cadastros/clientes/${row.id}`}
-            onDelete={() => handleDelete(row.id, row.nome)}
-            deleteTitle="Remover cliente"
-            deleteDescription={`Remover "${row.nome}" da base? Esta ação é simulada.`}
+            onDelete={() => deleteMutation.mutate(row.id)}
+            deleteTitle="Desativar cliente"
+            deleteDescription={`Desativar "${row.nome}"? O histórico fiscal permanece auditável.`}
             extra={[
               {
-                label: 'Ver histórico de compras',
-                onClick: () => toast.info('Histórico do cliente (mock)'),
+                label: 'Ver histórico de notas',
+                onClick: () => toast.info('Histórico do cliente (em breve)'),
               },
             ]}
           />
         )}
         page={page}
-        pageSize={10}
+        pageSize={pageSize}
         onPageChange={setPage}
         totalLabelSingular="cliente"
         totalLabelPlural="clientes"
-        emptyTitle="Nenhum cliente encontrado"
+        emptyTitle={isLoading ? 'Carregando...' : 'Nenhum cliente encontrado'}
         emptyDescription="Ajuste os filtros ou crie um novo cliente."
       />
     </div>
