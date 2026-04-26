@@ -190,6 +190,80 @@ Aguardar status `available` antes de aplicar migration. Em rollback, fazer `rest
 
 Ver Pitfall #10 (PITFALLS.md). Fase 2 entrega o job `certificado-expiring-alert` com escalonamento D-60 / D-30 / D-15 / D-7 / D-0. Operador monitora **Dashboard da contabilidade > Certificados** e contata empresas com cert em D-7.
 
+### 3.6 BullMQ — Cert Expiration Cron (Plan 02-05)
+
+**O que faz:** Cron diário às **03:00 BRT (06:00 UTC)** varre todos os certificados ativos da plataforma e gera linhas em `alertas_certificado` escalonadas:
+
+| Tier | Janela (dias até `notAfter`) | Severity |
+|------|------------------------------|----------|
+| D-60 | 60 ≥ d > 30                  | info     |
+| D-30 | 30 ≥ d > 15                  | warning  |
+| D-15 | 15 ≥ d > 7                   | critical |
+| D-7  | 7 ≥ d > 0                    | critical |
+| D-0  | d ≤ 0 (vencido)              | blocking |
+
+**Idempotência:** `@@unique([certificadoId, tier])` no banco — re-runs no mesmo dia retornam a mesma linha. `jobId='cert-expiration-daily'` previne dupla agenda em restarts.
+
+**Componentes:**
+- `apps/api/src/modules/queue/queue.module.ts` — registra BullMQ globalmente
+- `apps/api/src/modules/certificados/cert-expiration.scheduler.ts` — `OnApplicationBootstrap` agenda o cron
+- `apps/api/src/modules/certificados/cert-expiration.processor.ts` — worker que consome jobs `sweep`
+- `apps/api/src/modules/certificados/cert-expiration.service.ts` — `runOnce()` é a lógica de varredura
+
+**Ambiente:**
+
+| Ambiente | REDIS_URL | Comportamento |
+|----------|-----------|---------------|
+| Dev sem Redis | (vazio) | Scheduler vira no-op com WARN no log; endpoints REST de leitura/resolve funcionam normalmente |
+| Dev com docker-compose | `redis://localhost:6380` | Cron real roda; tests (`NODE_ENV=test`) ignoram o bootstrap |
+| Staging/Prod | `rediss://elasticache-...:6379` (TLS obrigatório) | Cron real; reconnect automático se Redis cair |
+
+**Roda manual em incidente:**
+
+```bash
+# Dev — disparar varredura imediata via Node REPL apontando ao Redis local
+node -e "
+  const { Queue } = require('bullmq');
+  const q = new Queue('cert-expiration', { connection: { url: 'redis://localhost:6380' } });
+  q.add('sweep', {}).then(j => console.log('enfileirado job', j.id)).then(() => q.close());
+"
+
+# Prod — preferir endpoint admin (Phase 7 hardening) ou bastion + redis-cli LPUSH;
+# enquanto não houver, conectar ao bastion e usar o Node REPL com REDIS_URL prod.
+```
+
+**Listar alertas abertos do tenant (HTTP):**
+
+```bash
+curl -H "Authorization: Bearer $JWT" \
+  https://api.nexofiscal.com.br/api/certificados/alertas
+```
+
+**Resolver alerta manualmente (após renovação fora-de-banda):**
+
+```bash
+curl -X PATCH -H "Authorization: Bearer $JWT" \
+  https://api.nexofiscal.com.br/api/certificados/alertas/<uuid>/resolver
+```
+
+**Retry policy:** 3 attempts + exponential backoff 5s (config em `QueueModule`). Falha persistente vai para Sentry via Pino.
+
+**Desligar em manutenção (raro):** dropar a recurring job pelo BullMQ:
+
+```bash
+node -e "
+  const { Queue } = require('bullmq');
+  const q = new Queue('cert-expiration', { connection: { url: process.env.REDIS_URL } });
+  q.removeJobScheduler('cert-expiration-daily').then(r => console.log('removed:', r)).then(() => q.close());
+"
+```
+
+**Re-religar:** basta restartar o app — o `CertExpirationScheduler.onApplicationBootstrap` re-registra o cron via `upsertJobScheduler` (idempotente).
+
+**Healthcheck:** Phase 7 incluirá o ping ao Redis no `/api/health`. No MVP, `redis-cli -u $REDIS_URL ping` deve retornar `PONG`.
+
+**RLS bypass (decisão arquitetural):** O cron roda fora de request scope (sem `app.current_tenant`). A varredura é cross-tenant legítima — operação de ops, não de tenant. As políticas RLS de `certificados_digitais` e `alertas_certificado` permitem leitura/escrita quando `app.role='platform_admin'` (Plan 02-01 migration 200). O service usa o `PrismaService` direto; em prod, a infra do worker deve abrir a conexão com role apropriado (TODO Phase 7: parametrizar via `app.role` em transação dedicada do processor).
+
 ---
 
 ## 4. Incidentes
