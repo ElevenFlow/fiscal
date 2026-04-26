@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { seedLookups } from './seed-lookups';
 
 /**
  * Seed determinístico — Nexo Fiscal (Plan 01-04)
@@ -224,6 +225,12 @@ async function main(): Promise<void> {
         ambiente: 'HOMOLOGACAO',
       },
     });
+
+    // Phase 2 Plan 02-08 — popula tabelas-lookup (NCM/CEST/CFOP/LC116) a partir
+    // de fixtures bootstrap. Idempotente: só insere se a tabela estiver vazia
+    // (worker mensal lookup-sync cuida das atualizações posteriores).
+    console.log('[seed] Phase 2 lookups (NCM/CEST/CFOP/LC116) bootstrap');
+    await seedLookups(prisma);
 
     console.log('[seed] Concluído.');
     console.log('[seed] UUIDs gerados:', UUIDS);

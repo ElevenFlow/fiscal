@@ -11,6 +11,7 @@
  */
 export const QUEUE_NAMES = {
   CERT_EXPIRATION: 'cert-expiration',
+  LOOKUP_SYNC: 'lookup-sync',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -22,4 +23,5 @@ export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
  */
 export const SCHEDULER_JOB_IDS = {
   CERT_EXPIRATION_DAILY: 'cert-expiration-daily',
+  LOOKUP_SYNC_MONTHLY: 'lookup-sync-monthly',
 } as const;

@@ -56,6 +56,7 @@ import { QUEUE_NAMES } from './queue.config';
     // Registrar filas conhecidas; planos futuros podem fazer registerQueue
     // dentro dos próprios feature modules (02-08 worker NCM/CFOP).
     BullModule.registerQueue({ name: QUEUE_NAMES.CERT_EXPIRATION }),
+    BullModule.registerQueue({ name: QUEUE_NAMES.LOOKUP_SYNC }),
   ],
   exports: [BullModule],
 })
