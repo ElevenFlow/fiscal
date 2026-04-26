@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaginationQuerySchema } from './common.js';
+import { PaginationQuerySchema } from './common';
 
 /**
  * Schemas Zod — Produto (Phase 2 Plan 02-02).

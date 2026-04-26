@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaginationQuerySchema, cnpjValidatedSchema, enderecoSchema } from './common.js';
+import { PaginationQuerySchema, cnpjValidatedSchema, enderecoSchema } from './common';
 
 /**
  * Schemas Zod — Empresa (tenant) (Phase 2 Plan 02-02).

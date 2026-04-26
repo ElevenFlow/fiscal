@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaginationQuerySchema, cpfCnpjValidatedSchema, enderecoSchema } from './common.js';
+import { PaginationQuerySchema, cpfCnpjValidatedSchema, enderecoSchema } from './common';
 
 /**
  * Schemas Zod — Fornecedor (Phase 2 Plan 02-02).
