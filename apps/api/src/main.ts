@@ -8,6 +8,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
+import { BusinessExceptionFilter } from './common/business-exception.filter';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -20,6 +21,9 @@ async function bootstrap(): Promise<void> {
   );
 
   app.useLogger(app.get(Logger));
+
+  // 4xx domain exceptions → JSON estruturado, log info-level (Plan 02-02).
+  app.useGlobalFilters(new BusinessExceptionFilter());
 
   // Global prefix — todas rotas em /api/...
   app.setGlobalPrefix('api');
