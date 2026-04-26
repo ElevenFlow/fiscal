@@ -22,8 +22,12 @@ DROP ROLE IF EXISTS app_user;
 CREATE ROLE app_user LOGIN PASSWORD :'app_user_pw' NOBYPASSRLS;
 
 -- 3) Extensões fiscais-críticas.
+--    pg_trgm é usado pela Phase 2 (autocomplete em ncm/cest/cfop/lc116).
+--    Criadas como superuser (postgres) — app_admin não tem CREATE EXTENSION em
+--    DBs gerenciados; init.sql replica esse padrão localmente para evitar drift.
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 -- 4) Ownership e grants base.
 --    app_admin é owner do schema public (para prisma migrate criar tabelas).
