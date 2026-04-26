@@ -8,6 +8,14 @@ import { AuditInterceptor } from './modules/audit/audit.interceptor';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ClerkGuard } from './modules/auth/clerk.guard';
+// === Phase 2 Cadastros (02-02) imports — DO NOT MOVE; 02-04 + 02-06 append below ===
+import { ClientesModule } from './modules/clientes/clientes.module';
+import { ContabilidadesModule } from './modules/contabilidades/contabilidades.module';
+import { EmpresasModule } from './modules/empresas/empresas.module';
+import { FornecedoresModule } from './modules/fornecedores/fornecedores.module';
+import { ProdutosModule } from './modules/produtos/produtos.module';
+import { ServicosModule } from './modules/servicos/servicos.module';
+// === End Phase 2 Cadastros imports ===
 import { HealthModule } from './modules/health/health.module';
 import { LgpdModule } from './modules/lgpd/lgpd.module';
 import { SentryModule } from './modules/observability/sentry.module';
@@ -33,6 +41,14 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     LgpdModule, // Portal do titular (FOUND-12) — BLOCKER #2 Option A
     SentryModule, // Observability — Sentry bootstrap no-op sem DSN (Plan 01-10)
     HealthModule,
+    // === Phase 2 Cadastros (02-02) — DO NOT MOVE; 02-04 + 02-06 append below ===
+    ClientesModule,
+    FornecedoresModule,
+    ProdutosModule,
+    ServicosModule,
+    EmpresasModule,
+    ContabilidadesModule,
+    // === End Phase 2 Cadastros ===
   ],
   providers: [
     // Ordem CRÍTICA (Plan 07):
