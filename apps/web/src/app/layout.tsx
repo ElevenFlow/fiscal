@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { AppQueryProvider } from '@/lib/query-client';
 import './globals.css';
 
 /**
  * Root layout — Plan 02.1-03 (auth in-house).
- * ClerkProvider removido. AppQueryProvider removido (não existe neste branch ainda;
- * será adicionado via merge de main quando 02-07 for integrado).
+ * ClerkProvider removido. AppQueryProvider mantido (TanStack Query 5.x via Plan 02-07).
  */
 
 const inter = Inter({
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
-        {children}
+        <AppQueryProvider>{children}</AppQueryProvider>
         <Toaster richColors position="top-right" closeButton />
       </body>
     </html>

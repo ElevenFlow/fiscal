@@ -8,7 +8,7 @@
  *  - refetchOnWindowFocus false: usuário trocando de aba não dispara N requests.
  *  - retry 1: transient error tenta uma vez; 4xx propaga rapidamente.
  *
- * Mounted em apps/web/src/app/layout.tsx ABAIXO de <ClerkProvider>.
+ * Mounted em apps/web/src/app/layout.tsx (sem ClerkProvider — Plan 02.1-03).
  *
  * Convenção de queryKeys: ['{resource}', filtersOrId?]
  *  - ['clientes']                       lista padrão
