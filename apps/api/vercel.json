@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "buildCommand": "pnpm install --frozen-lockfile --prod=false && pnpm --filter @nexo/api build",
   "installCommand": "echo 'install handled by buildCommand'",
   "functions": {
