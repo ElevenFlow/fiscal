@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { hash } from '@node-rs/argon2';
 import { seedLookups } from './seed-lookups';
 
 /**
@@ -234,9 +235,71 @@ async function main(): Promise<void> {
 
     console.log('[seed] Concluído.');
     console.log('[seed] UUIDs gerados:', UUIDS);
+
+    // Phase 02.1 — seed do 1º admin platform se nenhum user admin existir
+    await seedFirstAdmin(prisma);
   } finally {
     await prisma.$disconnect();
   }
+}
+
+/**
+ * Cria o primeiro admin de plataforma se nenhum user existir ainda.
+ * Roda após o seed de fixtures de dev (tenants A/B) — idempotente.
+ *
+ * Credenciais padrão: admin@nexofiscal.local / nexo2026
+ * TROCAR IMEDIATAMENTE após o primeiro login em /configuracoes/seguranca.
+ */
+async function seedFirstAdmin(prisma: PrismaClient): Promise<void> {
+  // Verifica se já existe algum admin de plataforma (membership scopeType=platform).
+  // Em dev, o seed de fixtures já criou users — mas pode não ter admin platform.
+  // Em prod/staging DB virgem, nenhum user existe ainda e este bloco cria o primeiro.
+  const existingAdmin = await prisma.userMembership.findFirst({
+    where: { scopeType: 'platform', role: 'admin' },
+  });
+
+  if (existingAdmin) {
+    console.log('[seed] Seed auth: admin platform já existe, pulando criação do admin inicial.');
+    return;
+  }
+
+  const ARGON2_OPTIONS = {
+    memoryCost: 65536, // 64 MB — NIST SP 800-63B
+    timeCost: 3,
+    parallelism: 4,
+    outputLen: 32,
+  };
+
+  const passwordHash = await hash('nexo2026', ARGON2_OPTIONS);
+
+  const admin = await prisma.user.create({
+    data: {
+      email: 'admin@nexofiscal.local',
+      passwordHash,
+      emailVerifiedAt: new Date(),
+      passwordChangedAt: new Date(),
+    },
+  });
+
+  await prisma.userMembership.create({
+    data: {
+      userId: admin.id,
+      scopeType: 'platform',
+      scopeId: null,
+      role: 'admin',
+    },
+  });
+
+  console.log('');
+  console.log('='.repeat(60));
+  console.log('ATENCAO: 1º admin criado automaticamente pelo seed!');
+  console.log('  Email:  admin@nexofiscal.local');
+  console.log('  Senha:  nexo2026');
+  console.log('');
+  console.log('  TROQUE A SENHA IMEDIATAMENTE apos o primeiro login');
+  console.log('  em /configuracoes/seguranca');
+  console.log('='.repeat(60));
+  console.log('');
 }
 
 main().catch((e: unknown) => {
