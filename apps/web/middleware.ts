@@ -84,7 +84,7 @@ export async function middleware(req: NextRequest) {
 
   // Sem autenticação válida → redirect /entrar
   const next = pathname + req.nextUrl.search;
-  const safeNext = isSafeNextPath(next) ? next : '/app';
+  const safeNext = isSafeNextPath(next) ? next : '/';
   const loginUrl = new URL(`/entrar?next=${encodeURIComponent(safeNext)}`, req.url);
   return NextResponse.redirect(loginUrl);
 }

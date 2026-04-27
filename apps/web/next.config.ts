@@ -4,7 +4,7 @@ import type { NextConfig } from 'next';
  * Next.js 16 config — modo App Router, transpilação do @nexo/ui (workspace).
  *
  * Routing:
- * - Route group `(app)` não prefixa URL: dashboard é servido em `/app/*`.
+ * - Route group `(app)` não prefixa URL: dashboard é servido em `/`.
  * - Plan 02-09 religou Clerk: rotas públicas `/entrar`, `/cadastrar`, `/recuperar-senha`.
  *
  * Build runner: package.json roda `next build --webpack`. Turbopack 16.2.4 tem bug de

@@ -42,8 +42,7 @@ function EntrarForm() {
 
       const next = searchParams.get('next');
       // Whitelist: apenas paths internos (sem protocolo — T-02.1-03-01)
-      const redirectTo =
-        next && next.startsWith('/') && !next.startsWith('//') ? next : '/app';
+      const redirectTo = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
       router.push(redirectTo);
     } catch {
       setError('Erro de conexão. Tente novamente.');
