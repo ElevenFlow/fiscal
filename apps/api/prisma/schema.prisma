@@ -19,15 +19,35 @@ datasource db {
 // ============================================================================
 
 model User {
-  id          String   @id @default(uuid()) @db.Uuid
-  email       String   @unique
-  clerkUserId String?  @unique @map("clerk_user_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                String    @id @default(uuid()) @db.Uuid
+  email             String    @unique
+  passwordHash      String?   @map("password_hash") @db.VarChar(128)
+  emailVerifiedAt   DateTime? @map("email_verified_at")
+  passwordChangedAt DateTime? @map("password_changed_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   memberships UserMembership[]
+  sessions    Session[]
 
   @@map("users")
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid                    @map("user_id")
+  refreshTokenHash String    @unique @db.Char(64)        @map("refresh_token_hash")
+  ip               String?   @db.VarChar(45)
+  userAgent        String?   @db.VarChar(500)            @map("user_agent")
+  expiresAt        DateTime                              @map("expires_at")
+  createdAt        DateTime  @default(now())             @map("created_at")
+  revokedAt        DateTime?                             @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([refreshTokenHash])
+  @@map("sessions")
 }
 
 // ============================================================================
