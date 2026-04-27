@@ -12,8 +12,9 @@ export const EnvSchema = z.object({
 
   // Database — app_user (NOBYPASSRLS) para runtime
   DATABASE_URL: z.string().url(),
-  // Database — app_admin (BYPASSRLS) apenas para migrations/seed
-  DATABASE_ADMIN_URL: z.string().url(),
+  // Database — app_admin (BYPASSRLS) apenas para migrations/seed.
+  // Opcional no runtime serverless: a API deve subir apenas com DATABASE_URL.
+  DATABASE_ADMIN_URL: z.string().url().optional(),
 
   // Clerk (placeholders — serão removidos em Plan 02.1-04; mantidos optional durante transição)
   CLERK_SECRET_KEY: z.string().optional(),
