@@ -1,7 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS DI exige valor runtime
 import { ConfigService } from '@nestjs/config';
-import { SignJWT, jwtVerify } from 'jose';
 import { createHash, randomBytes } from 'node:crypto';
 
 export interface AccessTokenPayload {
@@ -57,6 +56,7 @@ export class JwtService implements OnModuleInit {
 
   /** Emite access token JWT HS256 com TTL de 15 minutos. */
   async signAccess(payload: AccessTokenPayload): Promise<string> {
+    const { SignJWT } = await import('jose');
     return new SignJWT({
       sub: payload.userId,
       contabilidadeId: payload.contabilidadeId,
@@ -74,6 +74,7 @@ export class JwtService implements OnModuleInit {
    */
   async verifyAccess(token: string): Promise<AccessTokenPayload | null> {
     try {
+      const { jwtVerify } = await import('jose');
       const { payload } = await jwtVerify(token, this.secret, { algorithms: ['HS256'] });
       if (!payload.sub) return null;
       return {
