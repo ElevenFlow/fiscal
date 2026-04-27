@@ -6,6 +6,7 @@ initOtel();
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import cookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
@@ -32,6 +33,9 @@ async function bootstrap(): Promise<void> {
       files: 1, // só aceita 1 arquivo por upload (cert é single)
     },
   });
+
+  // @fastify/cookie — necessário para AuthGuard ler nf_access cookie (Plan 02.1-02).
+  await app.register(cookie);
 
   // 4xx domain exceptions → JSON estruturado, log info-level (Plan 02-02).
   app.useGlobalFilters(new BusinessExceptionFilter());

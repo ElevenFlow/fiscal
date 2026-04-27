@@ -7,7 +7,8 @@ import { LoggerModule } from './logger/logger.module';
 import { AuditInterceptor } from './modules/audit/audit.interceptor';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { ClerkGuard } from './modules/auth/clerk.guard';
+// === Auth In-House (Phase 02.1) — substitui Clerk ===
+import { AuthGuard } from './modules/auth/auth.guard';
 // === Phase 2 Cadastros (02-02) imports — DO NOT MOVE; 02-04 + 02-06 append below ===
 import { ClientesModule } from './modules/clientes/clientes.module';
 import { ContabilidadesModule } from './modules/contabilidades/contabilidades.module';
@@ -48,7 +49,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     }),
     LoggerModule,
     DbModule,
-    AuthModule, // Clerk (Plan 07) — ClerkStrategy + ClerkGuard providers
+    AuthModule, // Auth In-House (Plan 02.1-02) — AuthGuard + AuthController + JwtService
     TenantsModule, // aplica TenantContextMiddleware globalmente
     RbacModule,
     AuditModule,
@@ -81,13 +82,13 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     // === End Phase 2 Lookup ===
   ],
   providers: [
-    // Ordem CRÍTICA (Plan 07):
-    //  1. ClerkGuard valida JWT → popula req.auth
+    // Ordem CRÍTICA (Plan 02.1-02):
+    //  1. AuthGuard valida cookie nf_access → popula req.auth (substitui ClerkGuard)
     //  2. RolesGuard lê req.auth e autoriza via user_memberships lookup
     // Inverter a ordem faria RolesGuard ver req.auth=undefined e falhar 403 sempre.
     {
       provide: APP_GUARD,
-      useClass: ClerkGuard,
+      useClass: AuthGuard,
     },
     {
       provide: APP_GUARD,

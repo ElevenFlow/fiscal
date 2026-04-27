@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS DI exige valor runtime (reflection-based injection).
 import { PrismaService } from '../../db/prisma.service';
-import { Public } from '../auth/clerk.guard';
+import { Public } from '../auth/auth.guard';
 
 /**
  * GET /api/health — liveness + dependency check.
