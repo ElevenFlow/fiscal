@@ -13,7 +13,8 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "test": "turbo run test",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "check:no-clerk": "bash scripts/check-no-clerk.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

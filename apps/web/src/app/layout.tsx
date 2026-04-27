@@ -6,7 +6,7 @@ import './globals.css';
 
 /**
  * Root layout — Plan 02.1-03 (auth in-house).
- * ClerkProvider removido. AppQueryProvider mantido (TanStack Query 5.x via Plan 02-07).
+ * AppQueryProvider mantido (TanStack Query 5.x via Plan 02-07). Auth in-house Phase 02.1.
  */
 
 const inter = Inter({

@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 /**
  * Middleware de auth JWT cookie — Plan 02.1-03 (auth in-house).
  *
- * Substitui clerkMiddleware. Lê o cookie nf_access, verifica JWT.
+ * Lê o cookie nf_access, verifica JWT (auth in-house Phase 02.1).
  * Se expirado + nf_refresh presente, tenta refresh server-side.
  * Sem token válido → redirect /entrar?next={pathname}.
  *

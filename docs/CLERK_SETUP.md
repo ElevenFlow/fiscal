@@ -1,3 +1,11 @@
+> **OBSOLETO — Phase 2.1:** Clerk Organizations foi removido do projeto.
+> Este arquivo é mantido apenas como referência histórica.
+> Para o fluxo de autenticação atual, ver `docs/AUTH.md`.
+>
+> _Removido em: Phase 02.1-auth-in-house-foundation (2026-04-26)_
+
+---
+
 # Clerk — Setup Guide (Plan 01-07 / Plan 02-09 REATIVADO)
 
 > **Status (Phase 2 Plan 09):** Clerk Organizations REATIVADO após período de
