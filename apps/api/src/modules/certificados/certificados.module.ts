@@ -8,6 +8,8 @@ import { CertificadosController } from './certificados.controller';
 import { CertificadosService } from './certificados.service';
 import { PfxParserService } from './pfx-parser.service';
 
+const hasRedis = Boolean(process.env.REDIS_URL);
+
 /**
  * CertificadosModule — pipeline E2E do Certificado A1 + cron de alertas
  * (Phase 2 Plans 02-04 + 02-05).
@@ -29,14 +31,13 @@ import { PfxParserService } from './pfx-parser.service';
  * (emissão) e Phase 6 (Central de Alertas) possam injetar.
  */
 @Module({
-  imports: [BullModule.registerQueue({ name: QUEUE_NAMES.CERT_EXPIRATION })],
+  imports: hasRedis ? [BullModule.registerQueue({ name: QUEUE_NAMES.CERT_EXPIRATION })] : [],
   controllers: [CertificadosController],
   providers: [
     CertificadosService,
     PfxParserService,
     CertExpirationService,
-    CertExpirationProcessor,
-    CertExpirationScheduler,
+    ...(hasRedis ? [CertExpirationProcessor, CertExpirationScheduler] : []),
   ],
   exports: [CertificadosService, CertExpirationService],
 })

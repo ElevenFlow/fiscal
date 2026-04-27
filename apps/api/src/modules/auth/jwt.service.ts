@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS DI exige valor runtime
 import { ConfigService } from '@nestjs/config';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 export interface AccessTokenPayload {
   userId: string;
@@ -9,8 +9,7 @@ export interface AccessTokenPayload {
   role: 'platform_admin' | 'tenant_user';
 }
 
-/** TTL do access token — 15 minutos (claim exp no JWT). */
-const ACCESS_TTL = '15m';
+const ACCESS_TTL_S = 15 * 60;
 
 /** TTL do refresh token — 7 dias em ms (para calcular expiresAt na session). */
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -56,16 +55,14 @@ export class JwtService implements OnModuleInit {
 
   /** Emite access token JWT HS256 com TTL de 15 minutos. */
   async signAccess(payload: AccessTokenPayload): Promise<string> {
-    const { SignJWT } = await import('jose');
-    return new SignJWT({
+    const now = Math.floor(Date.now() / 1000);
+    return this.signHs256({
       sub: payload.userId,
       contabilidadeId: payload.contabilidadeId,
       role: payload.role,
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime(ACCESS_TTL)
-      .sign(this.secret);
+      iat: now,
+      exp: now + ACCESS_TTL_S,
+    });
   }
 
   /**
@@ -74,11 +71,10 @@ export class JwtService implements OnModuleInit {
    */
   async verifyAccess(token: string): Promise<AccessTokenPayload | null> {
     try {
-      const { jwtVerify } = await import('jose');
-      const { payload } = await jwtVerify(token, this.secret, { algorithms: ['HS256'] });
+      const payload = this.verifyHs256(token);
       if (!payload.sub) return null;
       return {
-        userId: payload.sub,
+        userId: String(payload.sub),
         contabilidadeId: (payload.contabilidadeId as string | null) ?? null,
         role: (payload.role as 'platform_admin' | 'tenant_user') ?? 'tenant_user',
       };
@@ -106,5 +102,42 @@ export class JwtService implements OnModuleInit {
    */
   hashRefreshToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private signHs256(payload: Record<string, unknown>): string {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const encodedHeader = this.base64UrlJson(header);
+    const encodedPayload = this.base64UrlJson(payload);
+    const signingInput = `${encodedHeader}.${encodedPayload}`;
+    const signature = createHmac('sha256', this.secret).update(signingInput).digest('base64url');
+    return `${signingInput}.${signature}`;
+  }
+
+  private verifyHs256(token: string): Record<string, unknown> {
+    const parts = token.split('.');
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
+      throw new Error('Invalid JWT format');
+    }
+
+    const signingInput = `${parts[0]}.${parts[1]}`;
+    const expected = createHmac('sha256', this.secret).update(signingInput).digest();
+    const actual = Buffer.from(parts[2], 'base64url');
+    if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+      throw new Error('Invalid JWT signature');
+    }
+
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as Record<
+      string,
+      unknown
+    >;
+    const exp = typeof payload.exp === 'number' ? payload.exp : 0;
+    if (exp <= Math.floor(Date.now() / 1000)) {
+      throw new Error('JWT expired');
+    }
+    return payload;
+  }
+
+  private base64UrlJson(value: Record<string, unknown>): string {
+    return Buffer.from(JSON.stringify(value)).toString('base64url');
   }
 }

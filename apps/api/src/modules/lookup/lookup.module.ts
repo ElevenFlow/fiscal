@@ -11,6 +11,8 @@ import { CfopSource } from './sources/cfop-source';
 import { Lc116Source } from './sources/lc116-source';
 import { NcmSource } from './sources/ncm-source';
 
+const hasRedis = Boolean(process.env.REDIS_URL);
+
 /**
  * LookupModule — autocomplete REST + worker mensal de sync (Plan 02-08, CAD-10).
  *
@@ -26,17 +28,16 @@ import { NcmSource } from './sources/ncm-source';
  * Tabelas-lookup são sem RLS (Plan 02-01) — catálogo público.
  */
 @Module({
-  imports: [BullModule.registerQueue({ name: QUEUE_NAMES.LOOKUP_SYNC })],
+  imports: hasRedis ? [BullModule.registerQueue({ name: QUEUE_NAMES.LOOKUP_SYNC })] : [],
   controllers: [LookupController],
   providers: [
     LookupService,
     LookupSyncService,
-    LookupSyncProcessor,
-    LookupSyncScheduler,
     NcmSource,
     CestSource,
     CfopSource,
     Lc116Source,
+    ...(hasRedis ? [LookupSyncProcessor, LookupSyncScheduler] : []),
   ],
   exports: [LookupService, LookupSyncService],
 })
