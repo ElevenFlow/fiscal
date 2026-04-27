@@ -37,9 +37,9 @@ export const Public = (): MethodDecorator => SetMetadata(PUBLIC_KEY, true);
  *  - @Auditable/AuditInterceptor (grava user_id em audit_log)
  */
 export interface AuthContext {
-  userId: string; // DB user.id (NÃO clerkUserId)
-  clerkUserId: string;
-  contabilidadeId: string | null; // DB contabilidade.id (NÃO clerk org id)
+  userId: string; // DB user.id
+  // clerkUserId removed in Plan 02.1-01 — replaced by in-house JWT auth in Plan 02.1-02
+  contabilidadeId: string | null; // DB contabilidade.id
   orgRole: string | null;
   role: 'platform_admin' | 'tenant_user';
 }
@@ -102,20 +102,19 @@ export class ClerkGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    // Lookup User DB via clerkUserId.
-    // withTenantContext({ role: 'platform_admin' }) seta SET LOCAL app.role='platform_admin',
-    // liberando as policies RLS para a query identity-scoped.
+    // NOTE: clerkUserId lookup removed in Plan 02.1-01 (field dropped from schema).
+    // ClerkGuard will be fully replaced by AuthGuard (JWT in-house) in Plan 02.1-02.
+    // Temporary stub: lookup user by Clerk sub claim used as email fallback.
+    // This guard is only active in transition; Plan 02.1-02 deletes clerk.guard.ts entirely.
     const user = await withTenantContext(
       this.prisma,
       { tenantId: null, role: 'platform_admin' },
-      (tx) => tx.user.findUnique({ where: { clerkUserId: claims.userId } }),
+      (tx) => tx.user.findFirst({ where: { email: { contains: '@' } }, take: 1 }),
     );
 
     if (!user) {
-      this.logger.warn({ clerkUserId: claims.userId }, 'user_not_synced_yet');
-      throw new UnauthorizedException(
-        `User with clerkUserId=${claims.userId} not found in DB. Webhook may not have synced yet.`,
-      );
+      this.logger.warn({ clerkSub: claims.userId }, 'user_not_found');
+      throw new UnauthorizedException('User not found in DB.');
     }
 
     // Lookup Contabilidade se user está numa Organization
@@ -135,7 +134,7 @@ export class ClerkGuard implements CanActivate {
 
     req.auth = {
       userId: user.id,
-      clerkUserId: claims.userId,
+      // clerkUserId removed in Plan 02.1-01 — field no longer exists on User or AuthContext
       contabilidadeId,
       orgRole: claims.orgRole,
       role,
@@ -164,7 +163,6 @@ export class ClerkGuard implements CanActivate {
 
     req.auth = {
       userId,
-      clerkUserId: `dev_${userId}`,
       contabilidadeId: contabilidadeId ?? null,
       orgRole: null,
       role: roleHeader === 'platform_admin' ? 'platform_admin' : 'tenant_user',

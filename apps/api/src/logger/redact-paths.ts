@@ -44,13 +44,19 @@ export const REDACT_PATHS = [
   'dekCiphered',
   '*.dekCiphered',
 
-  // Tokens e auth headers
+  // Tokens e auth headers — Phase 2.1 Auth In-House (Plan 02.1-01 T-02.1-01-02)
   'token',
   '*.token',
+  'accessToken',
+  '*.accessToken',
   'refresh_token',
   '*.refresh_token',
   'refreshToken',
   '*.refreshToken',
+  'refreshTokenHash',
+  '*.refreshTokenHash',
+  'passwordHash',
+  '*.passwordHash',
   'authorization',
   'req.headers.authorization',
   'req.headers.cookie',

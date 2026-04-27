@@ -6,7 +6,7 @@ export interface ExportPayload {
   user: {
     id: string;
     email: string;
-    clerkUserId: string | null;
+    // clerkUserId removed in Plan 02.1-01 (field dropped from schema)
     createdAt: Date;
     updatedAt: Date;
   };
@@ -110,7 +110,7 @@ export class LgpdService {
           user: {
             id: user.id,
             email: user.email,
-            clerkUserId: user.clerkUserId,
+            // clerkUserId removed in Plan 02.1-01 (field dropped from schema)
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
           },
