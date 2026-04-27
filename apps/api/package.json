@@ -15,7 +15,8 @@
     "db:migrate": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL prisma migrate deploy",
     "db:migrate:dev": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL prisma migrate dev",
     "db:reset": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL prisma migrate reset --force",
-    "db:seed": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL tsx prisma/seed.ts"
+    "db:seed": "cross-env DATABASE_URL=$DATABASE_ADMIN_URL tsx prisma/seed.ts",
+    "db:seed:admin": "tsx prisma/seed-admin.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

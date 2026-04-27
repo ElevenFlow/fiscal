@@ -95,7 +95,8 @@ eval $(node -e "
   console.log('export DATABASE_URL=' + JSON.stringify('postgresql://app_user:app_user_dev_pass@' + u.host + u.pathname + u.search));
 ")
 pnpm --filter @nexo/api db:migrate   # aplica migrations pendentes
-pnpm --filter @nexo/api db:seed      # 1ª vez: cria admin + lookups
+pnpm --filter @nexo/api db:seed      # dev/staging zerado: cria fixtures + admin + lookups
+pnpm --filter @nexo/api db:seed:admin # staging/prod: cria somente o 1º admin, sem limpar dados
 ```
 
 Recomendado adicionar essa sequência ao GitHub Action quando estabilizar.

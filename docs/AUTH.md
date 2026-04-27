@@ -131,6 +131,14 @@ pnpm --filter @nexo/api db:seed
 Cria `admin@nexofiscal.local` com senha `nexo2026` (argon2id) e membership
 `{ scopeType: 'platform', role: 'admin' }` se nenhum admin platform existir.
 
+Para staging/produção, prefira o seed seguro e não destrutivo:
+
+```bash
+pnpm --filter @nexo/api db:seed:admin
+```
+
+Opcionalmente configure `SEED_ADMIN_EMAIL` e `SEED_ADMIN_PASSWORD` antes de rodar.
+
 **Trocar a senha imediatamente após o primeiro login** em `/configuracoes/seguranca`.
 
 ---
