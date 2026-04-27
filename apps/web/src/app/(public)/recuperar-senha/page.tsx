@@ -1,13 +1,24 @@
-import { SignIn } from '@clerk/nextjs';
-
 /**
- * Página /recuperar-senha — alias para o fluxo "Esqueci senha" do Clerk SignIn.
- * Plan 02-09 religou. O componente SignIn já exibe o link "Esqueci minha senha"
- * que dispara o e-mail de redefinição (TTL ≤1h gerenciado pelo Clerk).
+ * Placeholder de recuperação de senha (Plan 02.1-03).
  *
- * `routing="hash"`: o fluxo de recuperação muda apenas o hash, mantendo a URL
- * estável e dispensando uma rota catch-all dedicada.
+ * Reset por e-mail será implementado na Phase 7.1 (Plan 2 da Auth In-House),
+ * que inclui integração com Resend/SES + verificação de email + rate limiting.
+ *
+ * Por enquanto: contate o administrador para redefinição manual via seed/psql.
  */
 export default function RecuperarSenhaPage() {
-  return <SignIn routing="hash" />;
+  return (
+    <div className="w-full space-y-6 text-center">
+      <h1 className="text-2xl font-semibold tracking-tight">Recuperar senha</h1>
+      <p className="text-sm text-muted-foreground">
+        Reset de senha por e-mail ainda não disponível.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Entre em contato com o administrador da sua contabilidade para redefinir sua senha.
+      </p>
+      <a href="/entrar" className="text-sm underline hover:text-primary">
+        Voltar ao login
+      </a>
+    </div>
+  );
 }

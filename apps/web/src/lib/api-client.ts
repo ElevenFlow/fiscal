@@ -1,24 +1,17 @@
 /**
- * apps/web/src/lib/api-client.ts — Plan 02-09 (religação Clerk).
+ * apps/web/src/lib/api-client.ts — Plan 02.1-03 (auth in-house).
  *
- * fetchApi: cliente server-side autenticado. Injeta Bearer JWT via
- * `auth().getToken()` do Clerk. Suporta:
- *  - Query/mutation tipados via genérico `T`.
- *  - Body string (JSON pré-serializado) ou FormData.
- *  - `tenantId` opcional → header `x-tenant-id` (empresa ativa).
- *  - Cache off por padrão (`no-store`) — dados pessoais nunca cacheiam.
+ * fetchApi: cliente server-side autenticado. Injeta o cookie nf_access como
+ * Authorization: Bearer header para apps/api. Substitui o mecanismo Clerk Bearer.
  *
- * Modos de auth:
- *  - DEFAULT: Clerk session via `auth().getToken()` → `Authorization: Bearer ...`
- *  - FALLBACK opt-in: `USE_PROTOTYPE_AUTH=true` ignora Clerk; downstream
- *    consome cookie HMAC via clerk-shim.ts (apenas getCurrentUser, não fetchApi).
- *  - DEV: `ALLOW_HEADER_AUTH=true` no apps/api permite x-user-id/x-role headers
- *    sem JWT (útil para smoke tests sem Clerk provisionado).
+ * Server-only: usa cookies() de next/headers — não importar de client components.
+ * Em dev com ALLOW_HEADER_AUTH=true no apps/api, aceita headers x-user-id/x-role
+ * para integration tests sem JWT (compat Plan 02-05).
  *
- * Ver Plan 02-09 SUMMARY para detalhes de Phase 2 plug-in (multipart, etc.).
+ * T-02.1-03-07: nf_access é HttpOnly — browser não acessa; fetchApi lê
+ * via cookies() server-side apenas; token não exposto a client.
  */
-
-import { auth } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 
 export interface FetchApiOptions extends Omit<RequestInit, 'body'> {
   body?: string | FormData;
@@ -41,19 +34,12 @@ export async function fetchApi<T = unknown>(
 ): Promise<T> {
   const { tenantId, body, headers, ...rest } = options;
 
-  let token: string | null = null;
-  if (process.env.USE_PROTOTYPE_AUTH !== 'true') {
-    try {
-      const session = await auth();
-      token = await session.getToken();
-    } catch {
-      // Sessão Clerk indisponível (ex: em rota pública chamando API). Segue sem token;
-      // o ClerkGuard rejeitará 401 — esperado para rota protegida.
-    }
-  }
+  // Lê o access token do cookie server-side (substitui Clerk auth().getToken())
+  const jar = await cookies();
+  const accessToken = jar.get('nf_access')?.value ?? null;
 
   const finalHeaders: Record<string, string> = { ...((headers as Record<string, string>) ?? {}) };
-  if (token) finalHeaders.Authorization = `Bearer ${token}`;
+  if (accessToken) finalHeaders.Authorization = `Bearer ${accessToken}`;
   if (tenantId) finalHeaders['x-tenant-id'] = tenantId;
   if (typeof body === 'string' && !finalHeaders['Content-Type']) {
     finalHeaders['Content-Type'] = 'application/json';

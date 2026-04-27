@@ -1,6 +1,5 @@
 'use client';
 
-import { useClerk, useUser } from '@clerk/nextjs';
 import {
   Button,
   DropdownMenu,
@@ -16,12 +15,12 @@ import { useMockRole, useMockUser, useSwitchProfile } from '@/lib/mock-auth';
 import type { Role } from '@/lib/mock-data';
 
 /**
- * Menu de usuário no header (Plan 02-09 — Clerk religado).
+ * Menu de usuário no header (Plan 02.1-03 — auth in-house).
  *
- * - Logout via `useClerk().signOut()` redireciona para /entrar.
- * - "Ver como…" continua usando mock-auth (protótipo de RBAC visual) até Phase 2
- *   plugar `publicMetadata.role` real do Clerk.
- * - Avatar: iniciais do user Clerk (fallback para mock se sessão indisponível).
+ * - Logout via POST /api/auth/signout (não useClerk().signOut()).
+ * - "Ver como…" continua usando mock-auth (protótipo de RBAC visual) até Phase 7.1
+ *   plugar roles reais do JWT.
+ * - Dados do usuário: mock até /api/auth/me ser conectado ao UI state (Phase 7.1).
  */
 
 const roleLabels: Record<Role, string> = {
@@ -31,22 +30,13 @@ const roleLabels: Record<Role, string> = {
 };
 
 export function UserMenu() {
-  const { isLoaded, isSignedIn, user: clerkUser } = useUser();
-  const { signOut } = useClerk();
   const router = useRouter();
   const mockUser = useMockUser();
   const role = useMockRole();
   const switchProfile = useSwitchProfile();
   const [isPending, startTransition] = useTransition();
 
-  const displayName = isLoaded && isSignedIn && clerkUser
-    ? clerkUser.fullName || clerkUser.firstName || mockUser.nome
-    : mockUser.nome;
-  const displayEmail = isLoaded && isSignedIn && clerkUser
-    ? clerkUser.primaryEmailAddress?.emailAddress ?? mockUser.email
-    : mockUser.email;
-
-  const initials = displayName
+  const initials = mockUser.nome
     .split(' ')
     .map((w) => w[0])
     .join('')
@@ -55,7 +45,7 @@ export function UserMenu() {
 
   const handleLogout = () => {
     startTransition(async () => {
-      await signOut();
+      await fetch('/api/auth/signout', { method: 'POST' });
       router.push('/entrar');
     });
   };
@@ -66,21 +56,21 @@ export function UserMenu() {
         <Button
           variant="ghost"
           className="flex items-center gap-2 px-2"
-          aria-label={`Menu do usuário ${displayName}`}
+          aria-label={`Menu do usuário ${mockUser.nome}`}
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-blue text-xs font-semibold text-white">
             {initials}
           </div>
           <div className="hidden flex-col items-start leading-none md:flex">
-            <span className="text-sm font-medium">{displayName}</span>
+            <span className="text-sm font-medium">{mockUser.nome}</span>
             <span className="text-xs text-muted-foreground">{roleLabels[role]}</span>
           </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <div className="px-2 py-1.5 text-sm">
-          <div className="font-medium">{displayName}</div>
-          <div className="truncate text-xs text-muted-foreground">{displayEmail}</div>
+          <div className="font-medium">{mockUser.nome}</div>
+          <div className="truncate text-xs text-muted-foreground">{mockUser.email}</div>
         </div>
         <DropdownMenuSeparator />
 

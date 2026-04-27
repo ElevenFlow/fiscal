@@ -43,17 +43,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // no Node.js (mantém ArrayBuffer streaming até apps/api).
   const formData = await req.formData();
 
-  // Injeção de Bearer: re-uso do mecanismo do api-client. Quando USE_PROTOTYPE_AUTH=true,
-  // token = null e apps/api fallback ALLOW_HEADER_AUTH cobre o smoke (dev only).
+  // Injeção de Bearer: lê nf_access cookie server-side (Plan 02.1-03 — auth in-house).
   let token: string | null = null;
-  if (process.env.USE_PROTOTYPE_AUTH !== 'true') {
-    try {
-      const { auth } = await import('@clerk/nextjs/server');
-      const session = await auth();
-      token = await session.getToken();
-    } catch {
-      // sessão indisponível — apps/api rejeitará 401 (esperado em rota protegida)
-    }
+  try {
+    const { cookies } = await import('next/headers');
+    const jar = await cookies();
+    token = jar.get('nf_access')?.value ?? null;
+  } catch {
+    // cookies() indisponível fora de request context — segue sem token
   }
 
   const apiUrl =
