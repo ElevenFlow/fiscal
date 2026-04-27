@@ -57,6 +57,9 @@ export const REDACT_PATHS = [
   '*.refreshTokenHash',
   'passwordHash',
   '*.passwordHash',
+  // Auth in-house (Plan 02.1-02) — body fields de autenticação
+  'req.body.password',
+  'req.body.confirmPassword',
   'authorization',
   'req.headers.authorization',
   'req.headers.cookie',

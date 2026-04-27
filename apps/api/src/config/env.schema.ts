@@ -15,9 +15,14 @@ export const EnvSchema = z.object({
   // Database — app_admin (BYPASSRLS) apenas para migrations/seed
   DATABASE_ADMIN_URL: z.string().url(),
 
-  // Clerk (placeholders preenchidos pelo Plan 07)
+  // Clerk (placeholders — serão removidos em Plan 02.1-04; mantidos optional durante transição)
   CLERK_SECRET_KEY: z.string().optional(),
   CLERK_PUBLISHABLE_KEY: z.string().optional(),
+
+  // Auth in-house (Plan 02.1-02) — substitui Clerk
+  // Em prod: mínimo 32 chars obrigatório. Em dev: fallback no JwtService se ausente.
+  AUTH_JWT_SECRET: z.string().min(32, 'AUTH_JWT_SECRET deve ter pelo menos 32 caracteres').optional(),
+  ALLOW_HEADER_AUTH: z.string().optional(),
 
   // AWS (placeholders Plan 08)
   AWS_REGION: z.string().default('sa-east-1'),
