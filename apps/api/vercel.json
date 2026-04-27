@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @nexo/api db:generate",
+  "buildCommand": "pnpm install --frozen-lockfile --prod=false && pnpm --filter @nexo/api build",
   "installCommand": "echo 'install handled by buildCommand'",
   "functions": {
     "api/index.ts": {
