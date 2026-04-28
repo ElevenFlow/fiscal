@@ -16,6 +16,10 @@
     "./auth": {
       "types": "./dist/auth/index.d.ts",
       "default": "./dist/auth/index.js"
+    },
+    "./fiscal": {
+      "types": "./dist/fiscal/index.d.ts",
+      "default": "./dist/fiscal/index.js"
     }
   },
   "scripts": {

@@ -23,6 +23,7 @@ const queueImports = hasRedis
         inject: [ConfigService],
       }),
       BullModule.registerQueue({ name: QUEUE_NAMES.CERT_EXPIRATION }),
+      BullModule.registerQueue({ name: QUEUE_NAMES.FISCAL_EMISSION }),
       BullModule.registerQueue({ name: QUEUE_NAMES.LOOKUP_SYNC }),
     ]
   : [];

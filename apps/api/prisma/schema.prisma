@@ -91,6 +91,7 @@ model Empresa {
   servicos             Servico[]
   certificadosDigitais CertificadoDigital[]
   seriesFiscais        SerieFiscal[]
+  notasFiscais         NotaFiscal[]
 
   @@index([tenantId, createdAt(sort: Desc)])
   @@map("empresas")
@@ -274,11 +275,72 @@ model SerieFiscal {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  empresa Empresa @relation(fields: [tenantId], references: [tenantId])
+  empresa      Empresa       @relation(fields: [tenantId], references: [tenantId])
+  notasFiscais NotaFiscal[]
 
   @@unique([empresaId, modelo, serie])
   @@index([tenantId, ativa])
   @@map("series_fiscais")
+}
+
+// ============================================================================
+// Fiscal - NF-e modelo 55 (Phase 3)
+// ============================================================================
+
+model NotaFiscal {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+  empresaId             String    @map("empresa_id") @db.Uuid
+  serieFiscalId         String?   @map("serie_fiscal_id") @db.Uuid
+  modelo                String    @db.VarChar(10) // 'NFE_55'
+  ambiente              String // 'HOMOLOGACAO' | 'PRODUCAO'
+  serie                 Int
+  numero                BigInt?
+  chaveAcesso           String?   @map("chave_acesso") @db.VarChar(44)
+  status                String // DRAFT | SIGNING | TRANSMITTING | PENDING_RESPONSE | AUTHORIZED | REJECTED | CANCELLED
+  idempotencyKey        String    @map("idempotency_key") @db.VarChar(120)
+  payload               Json
+  xmlAssinadoS3Key      String?   @map("xml_assinado_s3_key")
+  xmlAutorizadoS3Key    String?   @map("xml_autorizado_s3_key")
+  recibo                String?
+  protocoloAutorizacao  String?   @map("protocolo_autorizacao")
+  rejeicaoCodigo        String?   @map("rejeicao_codigo") @db.VarChar(10)
+  rejeicaoMensagem      String?   @map("rejeicao_mensagem")
+  cancelamentoProtocolo String?   @map("cancelamento_protocolo")
+  canceladaEm           DateTime? @map("cancelada_em") @db.Timestamptz(6)
+  emitidaEm             DateTime? @map("emitida_em") @db.Timestamptz(6)
+  autorizadaEm          DateTime? @map("autorizada_em") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  empresa      Empresa             @relation(fields: [tenantId], references: [tenantId])
+  serieFiscal  SerieFiscal?        @relation(fields: [serieFiscalId], references: [id])
+  eventos      NotaFiscalEvento[]
+
+  @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, chaveAcesso])
+  @@unique([tenantId, modelo, serie, numero])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@map("notas_fiscais")
+}
+
+model NotaFiscalEvento {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  notaFiscalId String   @map("nota_fiscal_id") @db.Uuid
+  action       String
+  status       String
+  codigo       String?  @db.VarChar(20)
+  mensagem     String?
+  payload      Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  notaFiscal NotaFiscal @relation(fields: [notaFiscalId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([notaFiscalId, createdAt(sort: Desc)])
+  @@map("nota_fiscal_eventos")
 }
 
 // ============================================================================

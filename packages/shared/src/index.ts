@@ -3,3 +3,4 @@
 export * from './tenant';
 export * from './cadastros/index';
 export * from './auth/index';
+export * from './fiscal/index';

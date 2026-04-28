@@ -11,6 +11,7 @@
  */
 export const QUEUE_NAMES = {
   CERT_EXPIRATION: 'cert-expiration',
+  FISCAL_EMISSION: 'fiscal-emission',
   LOOKUP_SYNC: 'lookup-sync',
 } as const;
 
