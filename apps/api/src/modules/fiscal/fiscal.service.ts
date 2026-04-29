@@ -1,6 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { NfeCancelInput, NfeDraftCreateInput } from '@nexo/shared';
+import type {
+  DevolucaoDraftCreateInput,
+  NfeCancelInput,
+  NfeDraftCreateInput,
+  NfseDraftCreateInput,
+} from '@nexo/shared';
 import {
   BusinessException,
   DuplicateException,
@@ -31,9 +36,21 @@ export class FiscalService {
   }
 
   async list(): Promise<unknown[]> {
+    return this.listByModelo('NFE_55');
+  }
+
+  async listNfse(): Promise<unknown[]> {
+    return this.listByModelo('NFSE');
+  }
+
+  async listDevolucoes(): Promise<unknown[]> {
+    return this.listByModelo('DEVOLUCAO');
+  }
+
+  private async listByModelo(modelo: 'NFE_55' | 'NFSE' | 'DEVOLUCAO'): Promise<unknown[]> {
     const tenantId = this.requireTenant();
     const rows = await this.prisma.notaFiscal.findMany({
-      where: { tenantId, modelo: 'NFE_55' },
+      where: { tenantId, modelo },
       include: { eventos: { orderBy: { createdAt: 'desc' }, take: 5 } },
       orderBy: { createdAt: 'desc' },
     });
@@ -118,6 +135,105 @@ export class FiscalService {
     }
   }
 
+  async createNfseDraft(dto: NfseDraftCreateInput): Promise<unknown> {
+    const tenantId = this.requireTenant();
+    await this.assertEmpresaDoTenant(dto.empresaId, tenantId, 'NFS-e');
+    await this.assertSerieFiscal({
+      tenantId,
+      serieFiscalId: dto.serieFiscalId,
+      modelo: 'NFSE',
+      serie: dto.serie,
+      ambiente: dto.ambiente,
+      label: 'NFS-e',
+    });
+    return this.createNotaDraft({
+      tenantId,
+      empresaId: dto.empresaId,
+      serieFiscalId: dto.serieFiscalId,
+      modelo: 'NFSE',
+      ambiente: dto.ambiente,
+      serie: dto.serie,
+      idempotencyKey: dto.idempotencyKey,
+      payload: {
+        ...dto.payload,
+        integracaoMunicipal: false,
+        escopo: 'Base operacional NFS-e Santa Catarina sem transmissao municipal real.',
+      },
+      action: 'nfse.draft.create',
+      mensagem: 'Rascunho NFS-e criado em modo operacional SC, sem transmissao municipal real.',
+    });
+  }
+
+  async createDevolucaoDraft(dto: DevolucaoDraftCreateInput): Promise<unknown> {
+    const tenantId = this.requireTenant();
+    await this.assertEmpresaDoTenant(dto.empresaId, tenantId, 'devolucao');
+    await this.assertSerieFiscal({
+      tenantId,
+      serieFiscalId: dto.serieFiscalId,
+      modelo: 'NFE_55',
+      serie: dto.serie,
+      ambiente: dto.ambiente,
+      label: 'NF-e de devolucao',
+    });
+    return this.createNotaDraft({
+      tenantId,
+      empresaId: dto.empresaId,
+      serieFiscalId: dto.serieFiscalId,
+      modelo: 'DEVOLUCAO',
+      ambiente: dto.ambiente,
+      serie: dto.serie,
+      idempotencyKey: dto.idempotencyKey,
+      payload: dto.payload,
+      action: 'devolucao.draft.create',
+      mensagem: 'Rascunho de nota de devolucao criado com referencia a NF-e de origem.',
+    });
+  }
+
+  async authorizeInternal(id: string, modelo: 'NFSE' | 'DEVOLUCAO'): Promise<unknown> {
+    const tenantId = this.requireTenant();
+    const row = await this.prisma.notaFiscal.findFirst({ where: { id, tenantId, modelo } });
+    if (!row) throw new NotFoundResourceException('nota_fiscal', id);
+    if (!['DRAFT', 'REJECTED'].includes(row.status)) return this.findOne(id);
+    const numero = await this.reserveNumberIfNeeded(row);
+    const xml = this.internalXml(row, numero);
+    const protocolo = `${modelo}-${Date.now()}`;
+    const chaveAcesso =
+      modelo === 'DEVOLUCAO' ? this.fakeDevolucaoAccessKey(row, numero) : undefined;
+    const updated = await this.prisma.notaFiscal.update({
+      where: { id },
+      data: {
+        numero,
+        status: 'AUTHORIZED',
+        chaveAcesso,
+        protocoloAutorizacao: protocolo,
+        autorizadaEm: new Date(),
+        emitidaEm: row.emitidaEm ?? new Date(),
+        payload: this.mergePayload(row.payload, {
+          xmlAutorizado: xml,
+          autorizacaoInterna: {
+            protocolo,
+            semTransmissaoExterna: true,
+            ufBase: 'SC',
+          },
+        }),
+        eventos: {
+          create: {
+            tenantId,
+            action: modelo === 'NFSE' ? 'nfse.internal_authorized' : 'devolucao.internal_authorized',
+            status: 'AUTHORIZED',
+            codigo: 'SIMULADO',
+            mensagem:
+              modelo === 'NFSE'
+                ? 'NFS-e preparada internamente para SC, sem transmissao municipal real.'
+                : 'Nota de devolucao autorizada internamente para fluxo operacional.',
+          },
+        },
+      },
+      include: { eventos: { orderBy: { createdAt: 'desc' } } },
+    });
+    return this.serialize(updated);
+  }
+
   async enqueueEmission(id: string): Promise<unknown> {
     await this.findOne(id);
     return this.queue.enqueueEmission(id);
@@ -154,8 +270,8 @@ export class FiscalService {
     }
     if (!content) {
       throw new BusinessException(
-        'NFE_XML_NOT_AVAILABLE',
-        'XML da NF-e ainda nao esta disponivel.',
+        'FISCAL_XML_NOT_AVAILABLE',
+        'XML do documento fiscal ainda nao esta disponivel.',
         404,
       );
     }
@@ -170,17 +286,126 @@ export class FiscalService {
     if (!row) throw new NotFoundResourceException('nota_fiscal', id);
     if (!['AUTHORIZED', 'CANCELLED'].includes(row.status)) {
       throw new BusinessException(
-        'DANFE_NOT_AVAILABLE',
-        'DANFE fica disponivel apos autorizacao da NF-e.',
+        'FISCAL_PDF_NOT_AVAILABLE',
+        'PDF fica disponivel apos autorizacao do documento fiscal.',
         409,
         { status: row.status },
       );
     }
     const pdf = this.simpleDanfePdf(row);
     return {
-      filename: `DANFE-${row.chaveAcesso ?? row.id}.pdf`,
+      filename: `${this.documentPdfPrefix(row.modelo)}-${row.chaveAcesso ?? row.id}.pdf`,
       contentBase64: pdf.toString('base64'),
     };
+  }
+
+  private async assertEmpresaDoTenant(
+    empresaId: string,
+    tenantId: string,
+    label: string,
+  ): Promise<void> {
+    if (empresaId !== tenantId) {
+      throw new ForbiddenResourceException(`Nao e permitido emitir ${label} para outra empresa.`);
+    }
+  }
+
+  private async assertSerieFiscal(params: {
+    tenantId: string;
+    serieFiscalId: string | undefined;
+    modelo: 'NFE_55' | 'NFSE';
+    serie: number;
+    ambiente: 'HOMOLOGACAO' | 'PRODUCAO';
+    label: string;
+  }): Promise<void> {
+    if (!params.serieFiscalId) return;
+    const serie = await this.prisma.serieFiscal.findFirst({
+      where: {
+        id: params.serieFiscalId,
+        tenantId: params.tenantId,
+        modelo: params.modelo,
+        serie: params.serie,
+        ambiente: params.ambiente,
+        ativa: true,
+      },
+    });
+    if (!serie) {
+      throw new BusinessException(
+        'SERIE_FISCAL_INVALIDA',
+        `Serie fiscal ${params.label} nao encontrada, inativa ou em ambiente divergente.`,
+        400,
+        { serieFiscalId: params.serieFiscalId, ambiente: params.ambiente },
+      );
+    }
+  }
+
+  private async createNotaDraft(params: {
+    tenantId: string;
+    empresaId: string;
+    serieFiscalId?: string;
+    modelo: 'NFSE' | 'DEVOLUCAO';
+    ambiente: 'HOMOLOGACAO' | 'PRODUCAO';
+    serie: number;
+    idempotencyKey: string;
+    payload: Record<string, unknown>;
+    action: string;
+    mensagem: string;
+  }): Promise<unknown> {
+    try {
+      const row = await this.prisma.$transaction(async (tx) => {
+        const nota = await tx.notaFiscal.create({
+          data: {
+            tenantId: params.tenantId,
+            empresaId: params.empresaId,
+            serieFiscalId: params.serieFiscalId ?? null,
+            modelo: params.modelo,
+            ambiente: params.ambiente,
+            serie: params.serie,
+            status: 'DRAFT',
+            idempotencyKey: params.idempotencyKey,
+            payload: params.payload as Prisma.InputJsonValue,
+          },
+        });
+        await tx.notaFiscalEvento.create({
+          data: {
+            tenantId: params.tenantId,
+            notaFiscalId: nota.id,
+            action: params.action,
+            status: 'DRAFT',
+            mensagem: params.mensagem,
+          },
+        });
+        return tx.notaFiscal.findUniqueOrThrow({
+          where: { id: nota.id },
+          include: { eventos: { orderBy: { createdAt: 'desc' } } },
+        });
+      });
+      return this.serialize(row);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new DuplicateException('idempotencyKey', params.idempotencyKey);
+      }
+      throw err;
+    }
+  }
+
+  private async reserveNumberIfNeeded(
+    row: Prisma.NotaFiscalGetPayload<true>,
+  ): Promise<bigint | undefined> {
+    if (row.numero) return row.numero;
+    if (!row.serieFiscalId) return BigInt(Date.now() % 1_000_000);
+    const serieFiscalId = row.serieFiscalId;
+    return this.prisma.$transaction(async (tx) => {
+      const serie = await tx.serieFiscal.findUnique({ where: { id: serieFiscalId } });
+      if (!serie) return BigInt(Date.now() % 1_000_000);
+      await tx.serieFiscal.update({
+        where: { id: serieFiscalId },
+        data: { proximoNumero: serie.proximoNumero + BigInt(1) },
+      });
+      return serie.proximoNumero;
+    });
   }
 
   private requireTenant(): string {
@@ -230,7 +455,51 @@ export class FiscalService {
     return null;
   }
 
+  private mergePayload(
+    payload: Prisma.JsonValue,
+    extra: Record<string, Prisma.JsonValue>,
+  ): Prisma.InputJsonValue {
+    if (typeof payload === 'object' && payload !== null && !Array.isArray(payload)) {
+      return { ...(payload as Record<string, Prisma.JsonValue>), ...extra };
+    }
+    return extra;
+  }
+
+  private internalXml(row: Prisma.NotaFiscalGetPayload<true>, numero: bigint | undefined): string {
+    const root = row.modelo === 'NFSE' ? 'NfseOperacionalSC' : 'NFeDevolucaoOperacional';
+    const escapedId = row.id.replace(/[<>&"]/g, '');
+    return [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      `<${root}>`,
+      `  <Id>${escapedId}</Id>`,
+      `  <Modelo>${row.modelo}</Modelo>`,
+      `  <UFBase>SC</UFBase>`,
+      `  <Ambiente>${row.ambiente}</Ambiente>`,
+      `  <Serie>${row.serie}</Serie>`,
+      `  <Numero>${numero?.toString() ?? ''}</Numero>`,
+      '  <SemTransmissaoMunicipal>true</SemTransmissaoMunicipal>',
+      `</${root}>`,
+    ].join('\n');
+  }
+
+  private fakeDevolucaoAccessKey(row: Prisma.NotaFiscalGetPayload<true>, numero: bigint | undefined): string {
+    const n = (numero?.toString() ?? '1').padStart(9, '0').slice(-9);
+    return `4226041234567800019555001${n}1000000001`.slice(0, 44).padEnd(44, '0');
+  }
+
+  private documentPdfPrefix(modelo: string): string {
+    if (modelo === 'NFSE') return 'DANFSE';
+    if (modelo === 'DEVOLUCAO') return 'DEVOLUCAO';
+    return 'DANFE';
+  }
+
   private simpleDanfePdf(row: Prisma.NotaFiscalGetPayload<true>): Buffer {
+    const title =
+      row.modelo === 'NFSE'
+        ? 'DANFSE - Documento Auxiliar da NFS-e'
+        : row.modelo === 'DEVOLUCAO'
+          ? 'Documento Auxiliar da NF-e de Devolucao'
+          : 'DANFE - Documento Auxiliar da NF-e';
     const lines = [
       '%PDF-1.4',
       '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
@@ -239,12 +508,12 @@ export class FiscalService {
       '5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
     ];
     const text = [
-      'DANFE - Documento Auxiliar da NF-e',
+      title,
       `Modelo: ${row.modelo}  Serie: ${row.serie}  Numero: ${row.numero?.toString() ?? '-'}`,
       `Status: ${row.status}`,
       `Chave: ${row.chaveAcesso ?? '-'}`,
       `Protocolo: ${row.protocoloAutorizacao ?? '-'}`,
-      'Representacao visual gerada a partir dos dados da NF-e.',
+      'Representacao visual gerada a partir dos dados fiscais persistidos.',
     ];
     const stream = `BT /F1 14 Tf 40 790 Td ${text
       .map((line, index) => `${index === 0 ? '' : '0 -24 Td '}(${line.replace(/[()]/g, '')}) Tj`)

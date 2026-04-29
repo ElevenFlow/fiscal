@@ -43,7 +43,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 type LocalPrestacao = 'prestador' | 'tomador' | 'outro';
@@ -61,8 +61,22 @@ const RETENCOES_LABELS = {
   csll: 'CSLL',
 } as const;
 type RetencaoKey = keyof typeof RETENCOES_LABELS;
+type EmpresaApi = { id: string; razaoSocial?: string; nomeFantasia?: string };
+type SerieFiscalApi = {
+  id: string;
+  modelo: string;
+  serie: number;
+  ambiente: 'HOMOLOGACAO' | 'PRODUCAO';
+  ativa: boolean;
+};
+type NotaFiscalApi = { id: string; numero?: string | null; protocoloAutorizacao?: string | null };
 
 export function NfseClient() {
+  const [empresas, setEmpresas] = useState<EmpresaApi[]>([]);
+  const [series, setSeries] = useState<SerieFiscalApi[]>([]);
+  const [empresaId, setEmpresaId] = useState('');
+  const [serieFiscalId, setSerieFiscalId] = useState('');
+  const [notaGerada, setNotaGerada] = useState<NotaFiscalApi | null>(null);
   // Tomador
   const [clienteBusca, setClienteBusca] = useState('');
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
@@ -97,8 +111,32 @@ export function NfseClient() {
   const [transmitindo, setTransmitindo] = useState(false);
   const [sucessoOpen, setSucessoOpen] = useState(false);
   const [numeroGerado, setNumeroGerado] = useState('000249');
-  const [codigoVerificacao, setCodigoVerificacao] = useState('A7K2-M9P4');
+  const [codigoVerificacao, setCodigoVerificacao] = useState('SC-INTERNO');
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  const serieSelecionada = useMemo(
+    () => series.find((serie) => serie.id === serieFiscalId),
+    [series, serieFiscalId],
+  );
+
+  useEffect(() => {
+    const loadBase = async () => {
+      const [empresasRes, seriesRes] = await Promise.all([
+        fetch('/api/empresas/minhas'),
+        fetch('/api/series'),
+      ]);
+      const empresasData = empresasRes.ok ? await empresasRes.json() : [];
+      const seriesData = seriesRes.ok ? await seriesRes.json() : [];
+      const nfseSeries = (Array.isArray(seriesData) ? seriesData : []).filter(
+        (serie: SerieFiscalApi) => serie.modelo === 'NFSE' && serie.ativa,
+      );
+      setEmpresas(Array.isArray(empresasData) ? empresasData : []);
+      setSeries(nfseSeries);
+      setEmpresaId((current) => current || empresasData?.[0]?.id || '');
+      setSerieFiscalId((current) => current || nfseSeries?.[0]?.id || '');
+    };
+    void loadBase();
+  }, []);
 
   const clientesFiltrados = useMemo(() => {
     const term = clienteBusca.trim().toLowerCase();
@@ -150,11 +188,58 @@ export function NfseClient() {
     setAliquotaIss(numberToBRL(s.aliquotaIss));
   };
 
-  const handleSalvarRascunho = () => {
-    toast.success('Rascunho salvo (mock)');
+  const criarRascunho = async (): Promise<NotaFiscalApi> => {
+    if (!empresaId) throw new Error('Selecione uma empresa para a NFS-e.');
+    if (!serieSelecionada) throw new Error('Configure uma serie NFS-e ativa antes de continuar.');
+    if (!clienteSelecionado) throw new Error('Selecione o tomador do servico.');
+    if (!servicoSelecionado) throw new Error('Selecione o servico prestado.');
+
+    const res = await fetch('/api/fiscal/nfse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        empresaId,
+        serieFiscalId: serieSelecionada.id,
+        ambiente: serieSelecionada.ambiente,
+        serie: serieSelecionada.serie,
+        idempotencyKey: `nfse-sc-${Date.now()}`,
+        payload: {
+          municipioPrestacao: 'Santa Catarina',
+          ufPrestacao: 'SC',
+          tomador: clienteSelecionado,
+          servico: { ...servicoSelecionado, descricaoComplementar, quantidade: qtdNum },
+          tributacao: { issRetido, aliquotaIss: aliquotaNum, retencoes },
+          valores: {
+            valorServico,
+            desconto: descontoNum,
+            baseCalculo,
+            issValor,
+            totalRetencoes,
+            valorLiquido,
+          },
+          observacoes,
+          integracaoMunicipal: false,
+        },
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
   };
 
-  const handleTransmitir = () => {
+  const handleSalvarRascunho = async () => {
+    setTransmitindo(true);
+    try {
+      const nota = await criarRascunho();
+      setNotaGerada(nota);
+      toast.success('Rascunho NFS-e salvo na base operacional SC.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao salvar rascunho NFS-e.');
+    } finally {
+      setTransmitindo(false);
+    }
+  };
+
+  const handleTransmitir = async () => {
     if (!clienteSelecionado) {
       toast.error('Selecione o tomador do serviço.');
       return;
@@ -168,19 +253,20 @@ export function NfseClient() {
       return;
     }
     setTransmitindo(true);
-    setTimeout(() => {
+    try {
+      const nota = notaGerada ?? (await criarRascunho());
+      const res = await fetch(`/api/fiscal/nfse/${nota.id}/autorizar-interno`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text());
+      const autorizada: NotaFiscalApi = await res.json();
+      setNotaGerada(autorizada);
       setTransmitindo(false);
-      // Gera número sequencial simulado
-      const n = 249 + Math.floor(Math.random() * 20);
-      setNumeroGerado(String(n).padStart(6, '0'));
-      setCodigoVerificacao(
-        `${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Math.random()
-          .toString(36)
-          .slice(2, 6)
-          .toUpperCase()}`,
-      );
+      setNumeroGerado(autorizada.numero?.padStart(6, '0') ?? '000001');
+      setCodigoVerificacao(autorizada.protocoloAutorizacao ?? 'SC-INTERNO');
       setSucessoOpen(true);
-    }, 2000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao preparar NFS-e.');
+      setTransmitindo(false);
+    }
   };
 
   const handleNovaNota = () => {
@@ -214,7 +300,7 @@ export function NfseClient() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Emitir NFS-e</h1>
             <p className="text-muted-foreground">
-              Nota Fiscal de Serviço eletrônica — transmitida à prefeitura do prestador.
+              Base operacional NFS-e para Santa Catarina, sem transmissão municipal real nesta fase.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -594,6 +680,36 @@ export function NfseClient() {
                 />
                 <ResumoLine label="Retenções" value={-totalRetencoes} />
                 <Separator />
+                <div className="space-y-2 rounded-md border bg-muted/30 p-2 text-xs">
+                  <label className="block">
+                    <span className="mb-1 block font-medium">Empresa</span>
+                    <select
+                      className="h-8 w-full rounded border bg-background px-2"
+                      value={empresaId}
+                      onChange={(event) => setEmpresaId(event.target.value)}
+                    >
+                      {empresas.map((empresa) => (
+                        <option key={empresa.id} value={empresa.id}>
+                          {empresa.nomeFantasia || empresa.razaoSocial || empresa.id}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block font-medium">Série NFS-e</span>
+                    <select
+                      className="h-8 w-full rounded border bg-background px-2"
+                      value={serieFiscalId}
+                      onChange={(event) => setSerieFiscalId(event.target.value)}
+                    >
+                      {series.map((serie) => (
+                        <option key={serie.id} value={serie.id}>
+                          Série {serie.serie} - {serie.ambiente}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm font-semibold">Valor líquido</span>
                   <Money
@@ -612,10 +728,10 @@ export function NfseClient() {
                   ) : (
                     <Send className="mr-2 h-4 w-4" aria-hidden />
                   )}
-                  {transmitindo ? 'Transmitindo…' : 'Transmitir para prefeitura'}
+                  {transmitindo ? 'Preparando…' : 'Gerar documento interno'}
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">
-                  Ao transmitir, a NFS-e é enviada à prefeitura municipal.
+                  Sem transmissão municipal real. O adapter será definido pelo primeiro cliente em SC.
                 </p>
               </CardContent>
             </Card>
@@ -627,9 +743,9 @@ export function NfseClient() {
       <Dialog open={transmitindo}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Conectando à prefeitura…</DialogTitle>
+            <DialogTitle>Preparando NFS-e interna…</DialogTitle>
             <DialogDescription>
-              Transmitindo NFS-e. Isso pode levar alguns segundos (mock 2s).
+              Gerando rascunho e documento operacional sem integração municipal real.
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center py-6">
@@ -645,9 +761,9 @@ export function NfseClient() {
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-status-autorizada/10">
               <CheckCircle2 className="h-6 w-6 text-status-autorizada" aria-hidden />
             </div>
-            <DialogTitle>NFS-e {numeroGerado} autorizada</DialogTitle>
+            <DialogTitle>NFS-e {numeroGerado} preparada</DialogTitle>
             <DialogDescription>
-              A nota foi autorizada pela prefeitura e já está disponível em Documentos Fiscais.
+              Documento interno gerado para o fluxo operacional de Santa Catarina.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -668,16 +784,17 @@ export function NfseClient() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                onClick={() => toast.success('PDF da DANFSE baixado (mock)')}
-              >
-                <Download className="mr-2 h-4 w-4" aria-hidden />
-                Baixar PDF
+              <Button variant="outline" asChild disabled={!notaGerada}>
+                <a href={notaGerada ? `/api/fiscal/nfse/${notaGerada.id}/danfse` : '#'}>
+                  <Download className="mr-2 h-4 w-4" aria-hidden />
+                  Baixar PDF
+                </a>
               </Button>
-              <Button variant="outline" onClick={() => toast.success('XML baixado (mock)')}>
-                <Download className="mr-2 h-4 w-4" aria-hidden />
-                Baixar XML
+              <Button variant="outline" asChild disabled={!notaGerada}>
+                <a href={notaGerada ? `/api/fiscal/nfse/${notaGerada.id}/xml` : '#'}>
+                  <Download className="mr-2 h-4 w-4" aria-hidden />
+                  Baixar XML
+                </a>
               </Button>
               <Button variant="outline" onClick={() => toast.success('E-mail enviado (mock)')}>
                 <Mail className="mr-2 h-4 w-4" aria-hidden />
@@ -703,7 +820,7 @@ export function NfseClient() {
           </DialogHeader>
           <div className="rounded-md border bg-card p-6 font-mono text-xs">
             <div className="mb-3 border-b pb-3 text-center">
-              <div className="font-bold">PREFEITURA MUNICIPAL DE SÃO PAULO</div>
+              <div className="font-bold">NFS-e OPERACIONAL SANTA CATARINA</div>
               <div>DANFSE — Documento Auxiliar da NFS-e</div>
             </div>
             <div className="space-y-1">
@@ -802,8 +919,8 @@ function NovoClienteDialog({
       documento,
       nome,
       email: email || undefined,
-      cidade: 'São Paulo',
-      uf: 'SP',
+      cidade: 'Florianópolis',
+      uf: 'SC',
     });
     reset();
     onOpenChange(false);

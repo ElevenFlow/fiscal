@@ -5,6 +5,7 @@ import { SeriesModule } from '../series/series.module';
 import { FiscalController } from './fiscal.controller';
 import { FiscalEmissionProcessor } from './fiscal-emission.processor';
 import { FiscalEmissionService } from './fiscal-emission.service';
+import { FiscalPhase4Controller } from './fiscal-phase4.controller';
 import { FISCAL_GATEWAY } from './fiscal.gateway';
 import { FiscalNoopQueueService, FiscalQueueService } from './fiscal-queue.service';
 import { FiscalService } from './fiscal.service';
@@ -21,7 +22,7 @@ const hasRedis = Boolean(process.env.REDIS_URL);
     SeriesModule,
     ...(hasRedis ? [BullModule.registerQueue({ name: QUEUE_NAMES.FISCAL_EMISSION })] : []),
   ],
-  controllers: [FiscalController],
+  controllers: [FiscalController, FiscalPhase4Controller],
   providers: [
     FiscalService,
     FiscalEmissionService,

@@ -39,10 +39,19 @@ import {
   Send,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 type StepId = 1 | 2 | 3 | 4;
+type EmpresaApi = { id: string; razaoSocial?: string; nomeFantasia?: string };
+type SerieFiscalApi = {
+  id: string;
+  modelo: string;
+  serie: number;
+  ambiente: 'HOMOLOGACAO' | 'PRODUCAO';
+  ativa: boolean;
+};
+type NotaFiscalApi = { id: string; numero?: string | null };
 
 interface NfOrigem {
   id: string;
@@ -206,6 +215,11 @@ const STEPS = [
 
 export function DevolucaoClient() {
   const [step, setStep] = useState<StepId>(1);
+  const [empresas, setEmpresas] = useState<EmpresaApi[]>([]);
+  const [series, setSeries] = useState<SerieFiscalApi[]>([]);
+  const [empresaId, setEmpresaId] = useState('');
+  const [serieFiscalId, setSerieFiscalId] = useState('');
+  const [notaGerada, setNotaGerada] = useState<NotaFiscalApi | null>(null);
 
   // Step 1
   const [buscaChave, setBuscaChave] = useState('');
@@ -225,6 +239,30 @@ export function DevolucaoClient() {
   const [emitindo, setEmitindo] = useState(false);
   const [sucessoOpen, setSucessoOpen] = useState(false);
   const [numeroGerado, setNumeroGerado] = useState('000035');
+
+  const serieSelecionada = useMemo(
+    () => series.find((serie) => serie.id === serieFiscalId),
+    [series, serieFiscalId],
+  );
+
+  useEffect(() => {
+    const loadBase = async () => {
+      const [empresasRes, seriesRes] = await Promise.all([
+        fetch('/api/empresas/minhas'),
+        fetch('/api/series'),
+      ]);
+      const empresasData = empresasRes.ok ? await empresasRes.json() : [];
+      const seriesData = seriesRes.ok ? await seriesRes.json() : [];
+      const nfeSeries = (Array.isArray(seriesData) ? seriesData : []).filter(
+        (serie: SerieFiscalApi) => serie.modelo === 'NFE_55' && serie.ativa,
+      );
+      setEmpresas(Array.isArray(empresasData) ? empresasData : []);
+      setSeries(nfeSeries);
+      setEmpresaId((current) => current || empresasData?.[0]?.id || '');
+      setSerieFiscalId((current) => current || nfeSeries?.[0]?.id || '');
+    };
+    void loadBase();
+  }, []);
 
   const notasFiltradas = useMemo(() => {
     const term = (buscaChave || buscaNumero || buscaFornecedor).trim().toLowerCase() || '';
@@ -284,14 +322,67 @@ export function DevolucaoClient() {
     setItensDevolucao(initial);
   };
 
-  const handleEmitir = () => {
+  const handleEmitir = async () => {
+    if (!empresaId) {
+      toast.error('Selecione uma empresa para emitir a devolução.');
+      return;
+    }
+    if (!serieSelecionada) {
+      toast.error('Configure uma série NF-e ativa para devolução.');
+      return;
+    }
+    if (!notaSelecionada || itensSelecionados.length === 0) {
+      toast.error('Selecione a NF-e de origem e ao menos um item.');
+      return;
+    }
+    const motivoFinal = [motivoTexto, observacao].filter(Boolean).join(' - ');
+    if (motivoFinal.trim().length < 15) {
+      toast.error('Informe um motivo com pelo menos 15 caracteres.');
+      return;
+    }
     setEmitindo(true);
-    setTimeout(() => {
+    try {
+      const createRes = await fetch('/api/fiscal/devolucoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresaId,
+          serieFiscalId: serieSelecionada.id,
+          ambiente: serieSelecionada.ambiente,
+          serie: serieSelecionada.serie,
+          idempotencyKey: `devolucao-${Date.now()}`,
+          payload: {
+            chaveOrigem: notaSelecionada.chaveAcesso.replace(/\s/g, ''),
+            numeroOrigem: notaSelecionada.numero,
+            fornecedor: notaSelecionada.fornecedor,
+            itens: itensSelecionados.map((item) => ({
+              sku: item.sku,
+              descricao: item.descricao,
+              quantidade: item.qtdDevolver,
+              valorUnitario: item.valorUnit,
+              cfopOrigem: notaSelecionada.cfop,
+              cfopDevolucao: notaSelecionada.cfop.startsWith('1') ? '5202' : '6202',
+            })),
+            motivo: motivoFinal,
+            observacoes: observacao || undefined,
+          },
+        }),
+      });
+      if (!createRes.ok) throw new Error(await createRes.text());
+      const draft: NotaFiscalApi = await createRes.json();
+      const authRes = await fetch(`/api/fiscal/devolucoes/${draft.id}/autorizar-interno`, {
+        method: 'POST',
+      });
+      if (!authRes.ok) throw new Error(await authRes.text());
+      const autorizada: NotaFiscalApi = await authRes.json();
+      setNotaGerada(autorizada);
       setEmitindo(false);
-      const n = 35 + Math.floor(Math.random() * 10);
-      setNumeroGerado(String(n).padStart(6, '0'));
+      setNumeroGerado(autorizada.numero?.padStart(6, '0') ?? '000001');
       setSucessoOpen(true);
-    }, 2000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao emitir devolução.');
+      setEmitindo(false);
+    }
   };
 
   const handleNovaDevolucao = () => {
@@ -768,6 +859,42 @@ export function DevolucaoClient() {
               ) : null}
 
               <Separator className="my-4" />
+              <div className="grid gap-3 text-sm md:grid-cols-2">
+                <label className="space-y-1">
+                  <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Empresa
+                  </span>
+                  <select
+                    className="h-10 w-full rounded-md border bg-background px-3"
+                    value={empresaId}
+                    onChange={(event) => setEmpresaId(event.target.value)}
+                  >
+                    {empresas.map((empresa) => (
+                      <option key={empresa.id} value={empresa.id}>
+                        {empresa.nomeFantasia || empresa.razaoSocial || empresa.id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-1">
+                  <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Série NF-e
+                  </span>
+                  <select
+                    className="h-10 w-full rounded-md border bg-background px-3"
+                    value={serieFiscalId}
+                    onChange={(event) => setSerieFiscalId(event.target.value)}
+                  >
+                    {series.map((serie) => (
+                      <option key={serie.id} value={serie.id}>
+                        Série {serie.serie} - {serie.ambiente}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <Separator className="my-4" />
               <div className="flex items-baseline justify-between">
                 <span className="text-sm font-semibold">Valor total da devolução</span>
                 <Money
@@ -808,7 +935,7 @@ export function DevolucaoClient() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Emitindo nota de devolução…</DialogTitle>
-            <DialogDescription>Transmitindo à SEFAZ (mock 2s).</DialogDescription>
+            <DialogDescription>Gerando documento operacional interno.</DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center py-6">
             <Loader2 className="h-10 w-10 animate-spin text-brand-blue" aria-hidden />
@@ -825,7 +952,7 @@ export function DevolucaoClient() {
             </div>
             <DialogTitle>NF-e de Devolução {numeroGerado} autorizada</DialogTitle>
             <DialogDescription>
-              Emitida com sucesso. O estoque e o saldo do fornecedor foram atualizados (mock).
+              Documento de devolução preparado e salvo no módulo fiscal.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -842,9 +969,11 @@ export function DevolucaoClient() {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Button variant="outline" onClick={() => toast.success('PDF baixado (mock)')}>
-                <Download className="mr-2 h-4 w-4" aria-hidden />
-                Baixar
+              <Button variant="outline" asChild disabled={!notaGerada}>
+                <a href={notaGerada ? `/api/fiscal/devolucoes/${notaGerada.id}/danfe` : '#'}>
+                  <Download className="mr-2 h-4 w-4" aria-hidden />
+                  Baixar
+                </a>
               </Button>
               <Button variant="outline" onClick={handleNovaDevolucao}>
                 <FilePlus className="mr-2 h-4 w-4" aria-hidden />
