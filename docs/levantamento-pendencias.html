@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Nexo Fiscal - Levantamento de Pendencias</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 16mm 14mm;
+      }
+
+      :root {
+        --ink: #172033;
+        --muted: #5f6b7a;
+        --line: #d8dee8;
+        --soft: #f3f7fb;
+        --brand: #1e5fd8;
+        --green: #1b8f68;
+        --amber: #b7791f;
+        --red: #c53030;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 10.5px;
+        line-height: 1.45;
+        margin: 0;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        color: #0f172a;
+        font-size: 28px;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        border-bottom: 1px solid var(--line);
+        color: #10213f;
+        font-size: 16px;
+        margin-top: 22px;
+        padding-bottom: 6px;
+      }
+
+      h3 {
+        color: #19345f;
+        font-size: 12.5px;
+        margin-top: 16px;
+      }
+
+      p {
+        margin: 7px 0;
+      }
+
+      .cover {
+        border-bottom: 4px solid var(--brand);
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 8px;
+      }
+
+      .meta {
+        color: var(--muted);
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .meta div {
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 18px;
+      }
+
+      .metric span {
+        color: var(--muted);
+      }
+
+      table {
+        border-collapse: collapse;
+        margin: 9px 0 14px;
+        page-break-inside: avoid;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 5px 6px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #eaf1fb;
+        color: #10213f;
+        font-weight: 700;
+      }
+
+      tbody tr:nth-child(even) td {
+        background: #fbfdff;
+      }
+
+      .tag {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 7px;
+        white-space: nowrap;
+      }
+
+      .ok {
+        background: #e7f7ef;
+        color: var(--green);
+      }
+
+      .partial {
+        background: #fff4d8;
+        color: var(--amber);
+      }
+
+      .pending {
+        background: #ffe7e7;
+        color: var(--red);
+      }
+
+      .note {
+        background: #f7fafc;
+        border-left: 4px solid var(--brand);
+        margin: 10px 0 14px;
+        padding: 9px 10px;
+      }
+
+      .check {
+        color: var(--green);
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .dash {
+        color: #94a3b8;
+        text-align: center;
+      }
+
+      .page-break {
+        break-before: page;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 9px;
+        margin-top: 24px;
+        padding-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="cover">
+      <h1>Nexo Fiscal - Levantamento de Pendencias</h1>
+      <p class="subtitle">
+        Inventario consolidado das entregas pendentes de desenvolvimento, classificado por backend,
+        frontend, integracao via API, infraestrutura, seguranca, testes e operacao.
+      </p>
+      <div class="meta">
+        <div><strong>Projeto</strong><br />Nexo Fiscal</div>
+        <div><strong>Data</strong><br />27/04/2026</div>
+        <div><strong>Base consultada</strong><br />.planning, ROADMAP, STATE e summaries</div>
+      </div>
+    </section>
+
+    <h2>1. Resumo Executivo</h2>
+    <div class="summary-grid">
+      <div class="metric"><strong>3</strong><span>fases executadas ou equivalentes</span></div>
+      <div class="metric"><strong>5</strong><span>fases principais pendentes</span></div>
+      <div class="metric"><strong>Phase 3</strong><span>proximo bloco critico</span></div>
+      <div class="metric"><strong>Fiscal</strong><span>maior risco tecnico restante</span></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Status atual</th>
+          <th>Observacao</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Phase 1 - Foundation</td>
+          <td><span class="tag ok">Implementada</span></td>
+          <td>Base de monorepo, RLS, auditoria, UI shell, storage e observabilidade scaffold.</td>
+        </tr>
+        <tr>
+          <td>Phase 2 - Cadastros, Certificado A1 e Series</td>
+          <td><span class="tag ok">Implementada</span></td>
+          <td>Cadastros, certificado, series, lookup e integracoes basicas com debitos menores.</td>
+        </tr>
+        <tr>
+          <td>Phase 02.1 - Auth in-house</td>
+          <td><span class="tag ok">Implementada</span></td>
+          <td>Substituicao de Clerk por autenticacao propria JWT/cookies.</td>
+        </tr>
+        <tr>
+          <td>Phase 3 - NF-e 55</td>
+          <td><span class="tag pending">Pendente</span></td>
+          <td>Principal proxima fase: gateway fiscal, worker, emissao, status, DANFE/XML.</td>
+        </tr>
+        <tr>
+          <td>Phase 4 - NFS-e e Devolucao</td>
+          <td><span class="tag pending">Pendente</span></td>
+          <td>Depende da arquitetura fiscal da Phase 3.</td>
+        </tr>
+        <tr>
+          <td>Phase 5 - Importacao XML e Estoque</td>
+          <td><span class="tag pending">Pendente</span></td>
+          <td>Ha UI/prototipo, mas falta processamento real e event sourcing.</td>
+        </tr>
+        <tr>
+          <td>Phase 6 - Documentos, Alertas e Dashboards</td>
+          <td><span class="tag partial">Parcial visual</span></td>
+          <td>Existem telas mockadas; faltam dados reais, alertas e consolidacao.</td>
+        </tr>
+        <tr>
+          <td>Phase 7 - Configuracoes, Usuarios e Hardening</td>
+          <td><span class="tag partial">Parcial</span></td>
+          <td>Configuracoes e usuarios aparecem visualmente, mas falta hardening funcional.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Leitura importante:</strong> as telas mockadas das fases 3 a 7 aceleram o trabalho,
+      mas nao contam como implementacao funcional. A pendencia real esta na ligacao com dominio,
+      banco, APIs, filas, storage fiscal e provedores externos.
+    </div>
+
+    <h2>2. Pendencias Transversais</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Pendencia</th>
+          <th>Backend</th>
+          <th>Frontend</th>
+          <th>Integracao API</th>
+          <th>Infra/Outro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Atualizar ROADMAP.md e STATE.md para refletir Phase 1, 2 e 02.1 concluidas.</td>
+          <td class="dash">-</td><td class="dash">-</td><td class="dash">-</td><td>Planejamento</td>
+        </tr>
+        <tr>
+          <td>Testes CRUD completos dos cadastros com Postgres real.</td>
+          <td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Testes</td>
+        </tr>
+        <tr>
+          <td>Rate limit BrasilAPI/ViaCEP por usuario.</td>
+          <td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td>Seguranca</td>
+        </tr>
+        <tr>
+          <td>Hardening de sessao/RLS da tabela sessions.</td>
+          <td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Seguranca</td>
+        </tr>
+        <tr>
+          <td>Revisao final de RLS cross-tenant em todos endpoints novos.</td>
+          <td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Seguranca</td>
+        </tr>
+        <tr>
+          <td>Worker fiscal fora de serverless/Vercel.</td>
+          <td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Infra</td>
+        </tr>
+        <tr>
+          <td>Redis/BullMQ produtivo.</td>
+          <td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Infra</td>
+        </tr>
+        <tr>
+          <td>Observabilidade real com Sentry/OTel DSN e alertas.</td>
+          <td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Infra</td>
+        </tr>
+        <tr>
+          <td>S3 Object Lock/KMS produtivo completo.</td>
+          <td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td>Infra/Security</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="page-break">3. Phase 3 - NF-e 55</h2>
+    <p>
+      Esta e a proxima fase critica. Ela transforma a base ja existente em emissao fiscal real
+      usando fila, worker, gateway fiscal, armazenamento de XML/DANFE e acompanhamento de status.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Pendencia</th>
+          <th>Backend</th>
+          <th>Frontend</th>
+          <th>Integracao API</th>
+          <th>Infra/Outro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Modelagem nota_fiscal, eventos, status e idempotency key.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Maquina de estados da nota.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Interface FiscalGateway.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td class="dash">-</td></tr>
+        <tr><td>Adapter Focus NFe.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td class="dash">-</td></tr>
+        <tr><td>Adapter PlugNotas fallback.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td class="dash">-</td></tr>
+        <tr><td>POC homologacao Focus/PlugNotas.</td><td class="dash">-</td><td class="dash">-</td><td class="check">Sim</td><td>Validacao fiscal</td></tr>
+        <tr><td>Worker de emissao assincrona.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Infra</td></tr>
+        <tr><td>Fila de emissao NF-e.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Infra</td></tr>
+        <tr><td>Lock de serie e numeracao fiscal.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Fiscal</td></tr>
+        <tr><td>Consulta de status antes de retry.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>Prevencao de rejeicao 539.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>Cancelamento NF-e.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>Traducao de rejeicoes SEFAZ.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>Download XML autorizado.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Storage</td></tr>
+        <tr><td>DANFE/PDF.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Fiscal/Storage</td></tr>
+        <tr><td>Envio por e-mail de PDF/XML.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Infra e-mail</td></tr>
+        <tr><td>SSE ou polling de status.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Tela real de emissao NF-e.</td><td class="dash">-</td><td class="check">Sim</td><td class="dash">-</td><td>UX fiscal</td></tr>
+        <tr><td>Formulario fiscal NF-e real.</td><td class="dash">-</td><td class="check">Sim</td><td class="dash">-</td><td>UX fiscal</td></tr>
+        <tr><td>Timeline da nota.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Testes de homologacao NF-e.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td>Testes</td></tr>
+      </tbody>
+    </table>
+
+    <h2>4. Phase 4 - NFS-e e Nota de Devolucao</h2>
+    <table>
+      <thead>
+        <tr><th>Pendencia</th><th>Backend</th><th>Frontend</th><th>Integracao API</th><th>Infra/Outro</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Adapter NFS-e Sao Paulo SF_v2 via gateway.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>Adapter ABRASF piloto.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>Modelagem especifica NFS-e/RPS.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Fiscal</td></tr>
+        <tr><td>Emissao NFS-e.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>Cancelamento NFS-e por regra municipal.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>DANFSE/PDF e XML.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Storage</td></tr>
+        <tr><td>Nota de devolucao vinculada a NF-e origem.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>Fiscal</td></tr>
+        <tr><td>CFOP inverso automatico.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Fiscal</td></tr>
+        <tr><td>UI de devolucao real.</td><td class="dash">-</td><td class="check">Sim</td><td class="dash">-</td><td>UX fiscal</td></tr>
+        <tr><td>Testes por prefeitura.</td><td class="check">Sim</td><td class="dash">-</td><td class="check">Sim</td><td>Testes</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="page-break">5. Phase 5 - Importacao XML e Estoque</h2>
+    <table>
+      <thead>
+        <tr><th>Pendencia</th><th>Backend</th><th>Frontend</th><th>Integracao API</th><th>Infra/Outro</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Upload real multiplo de XML.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Storage</td></tr>
+        <tr><td>Parser seguro com bloqueio XXE.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Seguranca</td></tr>
+        <tr><td>Worker de processamento de XML.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Infra</td></tr>
+        <tr><td>Deteccao de XML duplicado por chave.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Matching produto x item XML.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Tela de revisao de importacao real.</td><td class="dash">-</td><td class="check">Sim</td><td class="dash">-</td><td>UX</td></tr>
+        <tr><td>Criacao/atualizacao de produtos via XML.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Event sourcing de estoque.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Dominio</td></tr>
+        <tr><td>Movimentacoes manuais de estoque.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Saldo atual por view/materialized view.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Performance</td></tr>
+        <tr><td>Estoque minimo e alertas.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Desfazer importacao em ate 24h.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Reconciliacao noturna de estoque.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Infra</td></tr>
+        <tr><td>Testes de concorrencia de estoque.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Testes</td></tr>
+      </tbody>
+    </table>
+
+    <h2>6. Phase 6 - Documentos, Alertas e Dashboards</h2>
+    <table>
+      <thead>
+        <tr><th>Pendencia</th><th>Backend</th><th>Frontend</th><th>Integracao API</th><th>Infra/Outro</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tela unificada real de documentos fiscais.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Filtros por tipo/status/periodo/cliente/valor.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Download individual XML/PDF.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Storage</td></tr>
+        <tr><td>Download em lote ZIP/CSV.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Storage</td></tr>
+        <tr><td>Envio de documento por e-mail.</td><td class="check">Sim</td><td class="check">Sim</td><td class="check">Sim</td><td>E-mail</td></tr>
+        <tr><td>Timeline de eventos por documento.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Central de alertas real.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Deduplicacao de alertas em 24h.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Alertas automaticos de certificado, nota, estoque e login suspeito.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Badge real no sino do header.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Dashboard Empresa com dados reais.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Performance</td></tr>
+        <tr><td>Dashboard Contabilidade carteira consolidada.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Performance</td></tr>
+        <tr><td>Dashboard Admin plataforma.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Materialized views para dashboards.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Performance</td></tr>
+        <tr><td>SSE para eventos novos.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="page-break">7. Phase 7 - Configuracoes, Usuarios e Hardening</h2>
+    <table>
+      <thead>
+        <tr><th>Pendencia</th><th>Backend</th><th>Frontend</th><th>Integracao API</th><th>Infra/Outro</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Configuracoes reais da empresa.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Templates de e-mail por empresa.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>E-mail</td></tr>
+        <tr><td>Gestao de usuarios.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td></tr>
+        <tr><td>Convite, redefinicao, bloqueio e desativacao.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Seguranca</td></tr>
+        <tr><td>Perfis e permissoes granulares.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Seguranca</td></tr>
+        <tr><td>UI de auditoria com filtros e diff.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Compliance</td></tr>
+        <tr><td>Rate limit geral/auth/integrations.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>Seguranca</td></tr>
+        <tr><td>MFA ou hardening adicional de login.</td><td class="check">Sim</td><td class="check">Sim</td><td class="dash">-</td><td>Seguranca</td></tr>
+        <tr><td>Pentest/checklist OWASP.</td><td class="dash">-</td><td class="dash">-</td><td class="dash">-</td><td>Seguranca</td></tr>
+        <tr><td>Load test dashboard/API/emissao.</td><td class="dash">-</td><td class="dash">-</td><td class="dash">-</td><td>Performance</td></tr>
+        <tr><td>Status page publica.</td><td class="dash">-</td><td class="check">Sim</td><td class="check">Sim</td><td>Infra</td></tr>
+        <tr><td>Runbooks de incidente fiscal.</td><td class="dash">-</td><td class="dash">-</td><td class="dash">-</td><td>Ops</td></tr>
+        <tr><td>Backup/restore testado.</td><td class="dash">-</td><td class="dash">-</td><td class="dash">-</td><td>Ops</td></tr>
+        <tr><td>CI gates completos de RLS, lint, tests e no-secrets.</td><td class="check">Sim</td><td class="dash">-</td><td class="dash">-</td><td>DevOps</td></tr>
+      </tbody>
+    </table>
+
+    <h2>8. Priorizacao Recomendada</h2>
+    <table>
+      <thead>
+        <tr><th>Prioridade</th><th>Bloco</th><th>Motivo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Phase 3.1 - Dominio fiscal, schema, estados, idempotencia e FiscalGateway</td><td>Cria a base de emissao sem depender imediatamente de provedor real.</td></tr>
+        <tr><td>2</td><td>Phase 3.2 - Worker, fila e Focus NFe em homologacao</td><td>Transforma a emissao em fluxo assincrono operacional.</td></tr>
+        <tr><td>3</td><td>Phase 3.3 - XML, DANFE, cancelamento e rejeicoes</td><td>Fecha o ciclo fiscal minimo de uma NF-e autorizada ou rejeitada.</td></tr>
+        <tr><td>4</td><td>Phase 3.4 - UI real, status e testes</td><td>Permite uso pelo usuario final e validacao ponta a ponta.</td></tr>
+        <tr><td>5</td><td>Phases 4, 5, 6 e 7</td><td>Devem vir depois porque dependem de documentos fiscais reais e dados operacionais.</td></tr>
+      </tbody>
+    </table>
+
+    <footer>
+      Relatorio gerado para analise interna do projeto Nexo Fiscal. As marcacoes indicam responsabilidade
+      principal de desenvolvimento, nao exclusividade.
+    </footer>
+  </body>
+</html>

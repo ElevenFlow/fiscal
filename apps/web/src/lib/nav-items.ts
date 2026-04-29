@@ -4,6 +4,7 @@ import {
   FileText,
   LayoutDashboard,
   type LucideIcon,
+  Palette,
   Settings,
   ShieldCheck,
   ShoppingBag,
@@ -68,6 +69,7 @@ export const navItems: NavSection[] = [
     id: 'config',
     label: 'Configurações',
     items: [
+      { id: 'design-system', label: 'Design system', href: '/design-system', icon: Palette },
       { id: 'usuarios', label: 'Usuários', href: '/usuarios', icon: UserCog },
       { id: 'config', label: 'Configurações', href: '/config', icon: Settings },
     ],

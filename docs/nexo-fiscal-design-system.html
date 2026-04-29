@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Nexo Fiscal - Design System</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 15mm 13mm;
+      }
+
+      :root {
+        --ink: #172033;
+        --muted: #5f6b7a;
+        --line: #d8dee8;
+        --soft: #f4f7fb;
+        --panel: #ffffff;
+        --blue: #1e5fd8;
+        --blue-dark: #1748a8;
+        --green: #1ba97a;
+        --red: #e54848;
+        --amber: #f59e0b;
+        --info: #3b82f6;
+        --gray: #6b7280;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 10.4px;
+        line-height: 1.45;
+        margin: 0;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        color: var(--ink);
+        font-size: 29px;
+        letter-spacing: 0;
+        line-height: 1.08;
+      }
+
+      h2 {
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        font-size: 16px;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+      }
+
+      h3 {
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      section {
+        break-inside: avoid;
+        margin-top: 18px;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #eef5ff 0%, #ffffff 58%);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1fr 210px;
+        padding: 18px;
+      }
+
+      .eyebrow {
+        color: var(--blue);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.09em;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+      }
+
+      .lead {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 10px;
+        max-width: 620px;
+      }
+
+      .meta-card,
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+      }
+
+      .meta-card {
+        align-self: end;
+      }
+
+      .grid-2 {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-3 {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .grid-4 {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .mono {
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .token {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+      }
+
+      .swatch {
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 6px;
+        height: 34px;
+        width: 48px;
+      }
+
+      .blue {
+        background: var(--blue);
+      }
+
+      .blue-dark {
+        background: var(--blue-dark);
+      }
+
+      .green {
+        background: var(--green);
+      }
+
+      .red {
+        background: var(--red);
+      }
+
+      .amber {
+        background: var(--amber);
+      }
+
+      .info {
+        background: var(--info);
+      }
+
+      .pill {
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 9px;
+        font-weight: 800;
+        gap: 5px;
+        margin: 0 4px 6px 0;
+        padding: 3px 8px;
+      }
+
+      .dot {
+        background: currentColor;
+        border-radius: 999px;
+        height: 6px;
+        margin-top: 3px;
+        width: 6px;
+      }
+
+      .success {
+        background: #e9f8f2;
+        color: var(--green);
+      }
+
+      .danger {
+        background: #fdf0f0;
+        color: var(--red);
+      }
+
+      .warning {
+        background: #fff7e8;
+        color: #b56b00;
+      }
+
+      .process {
+        background: #eef5ff;
+        color: var(--info);
+      }
+
+      .neutral {
+        background: #f3f4f6;
+        color: var(--gray);
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .button {
+        border: 1px solid transparent;
+        border-radius: 6px;
+        display: inline-flex;
+        font-size: 10px;
+        font-weight: 700;
+        gap: 6px;
+        padding: 7px 10px;
+      }
+
+      .button.primary {
+        background: var(--blue);
+        color: #ffffff;
+      }
+
+      .button.outline {
+        background: #ffffff;
+        border-color: var(--line);
+      }
+
+      .button.green {
+        background: var(--green);
+        color: #ffffff;
+      }
+
+      .button.red {
+        background: var(--red);
+        color: #ffffff;
+      }
+
+      .field {
+        margin-top: 7px;
+      }
+
+      .label {
+        display: block;
+        font-size: 9px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .input {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--ink);
+        min-height: 28px;
+        padding: 6px 8px;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 7px 8px;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        background: var(--soft);
+        color: var(--muted);
+        font-size: 8.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .right {
+        text-align: right;
+      }
+
+      .principle {
+        align-items: flex-start;
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .icon {
+        color: var(--blue);
+        font-weight: 900;
+      }
+
+      .note {
+        background: #fff9ed;
+        border: 1px solid #f5d79d;
+        border-radius: 8px;
+        color: #7a4a00;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Nexo Fiscal Design System</p>
+        <h1>Interface fiscal clara, rápida e auditável</h1>
+        <p class="lead">
+          Tokens e componentes para telas de emissão, consulta, importação de XML, estoque, alertas
+          e auditoria. O visual prioriza leitura rápida, estados fiscais inequívocos e formulários
+          densos sem perder respiro.
+        </p>
+      </div>
+      <div class="meta-card">
+        <h3>Princípios de produto</h3>
+        <div class="principle"><span class="icon">✓</span><span>Uma ação principal por contexto operacional.</span></div>
+        <div class="principle"><span class="icon">✓</span><span>Tempo, status e retorno da SEFAZ sempre visíveis.</span></div>
+        <div class="principle"><span class="icon">✓</span><span>Dados sensíveis tratados com linguagem objetiva e rastreável.</span></div>
+      </div>
+    </header>
+
+    <section>
+      <p class="eyebrow">Fundação</p>
+      <h2>Cores e tokens</h2>
+      <div class="grid-3">
+        <div class="card token"><span class="swatch blue"></span><div><strong>Azul Nexo</strong><br /><span class="mono muted">brand.blue / #1E5FD8</span></div></div>
+        <div class="card token"><span class="swatch blue-dark"></span><div><strong>Azul escuro</strong><br /><span class="mono muted">brand.blue-dark / #1748A8</span></div></div>
+        <div class="card token"><span class="swatch green"></span><div><strong>Verde fiscal</strong><br /><span class="mono muted">brand.green / #1BA97A</span></div></div>
+        <div class="card token"><span class="swatch red"></span><div><strong>Perigo</strong><br /><span class="mono muted">brand.danger / #E54848</span></div></div>
+        <div class="card token"><span class="swatch amber"></span><div><strong>Atenção</strong><br /><span class="mono muted">brand.warning / #F59E0B</span></div></div>
+        <div class="card token"><span class="swatch info"></span><div><strong>Informação</strong><br /><span class="mono muted">brand.info / #3B82F6</span></div></div>
+      </div>
+    </section>
+
+    <section>
+      <p class="eyebrow">Tipografia</p>
+      <h2>Hierarquia para telas densas</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Título de página</h3>
+          <p style="font-size: 21px; font-weight: 750">Documentos fiscais</p>
+          <p class="muted">Consulte notas emitidas, eventos, XML autorizado e representação visual em PDF.</p>
+        </div>
+        <div class="card">
+          <h3>Dados fiscais</h3>
+          <p class="mono">35 2404 1234 5600 0199 5500 1000 0007 7810 0007 7817</p>
+          <div class="grid-3" style="margin-top: 10px">
+            <p><span class="muted">CNPJ</span><br /><span class="mono">12.345.678/0001-90</span></p>
+            <p><span class="muted">Série</span><br /><span class="mono">001</span></p>
+            <p><span class="muted">Valor</span><br /><span class="mono">R$ 1.280,00</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="eyebrow">Componentes</p>
+      <h2>Ações, estados e feedback</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Botões</h3>
+          <div class="button-row">
+            <span class="button primary">+ Emitir</span>
+            <span class="button green">✓ Autorizar</span>
+            <span class="button outline">↓ XML</span>
+            <span class="button red">! Cancelar</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Status fiscal</h3>
+          <span class="pill success"><span class="dot"></span>Autorizada</span>
+          <span class="pill danger"><span class="dot"></span>Rejeitada</span>
+          <span class="pill neutral"><span class="dot"></span>Cancelada</span>
+          <span class="pill warning"><span class="dot"></span>Pendente</span>
+          <span class="pill process"><span class="dot"></span>Processando</span>
+          <span class="pill neutral"><span class="dot"></span>Rascunho</span>
+        </div>
+        <div class="card">
+          <h3>Badges de contexto</h3>
+          <span class="pill process">Produção</span>
+          <span class="pill neutral">Homologação</span>
+          <span class="pill success">Sincronizado</span>
+          <span class="pill warning">Pendente</span>
+          <span class="pill danger">Bloqueante</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="eyebrow">Formulários</p>
+      <h2>Campos para emissão em menos de um minuto</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Nota fiscal de serviço</h3>
+          <div class="grid-2">
+            <div class="field"><span class="label">Tomador</span><div class="input">Clínica Boa Vista Ltda.</div></div>
+            <div class="field"><span class="label">CNPJ</span><div class="input mono">12.345.678/0001-90</div></div>
+            <div class="field"><span class="label">Valor</span><div class="input mono">R$ 1.280,00</div></div>
+            <div class="field"><span class="label">Código municipal</span><div class="input mono">17.01</div></div>
+          </div>
+          <div class="field"><span class="label">Serviço</span><div class="input">Consultoria fiscal e implantação operacional</div></div>
+        </div>
+        <div class="card">
+          <h3>Checklist de transmissão</h3>
+          <div class="principle"><span class="icon">✓</span><span>Certificado A1 válido</span></div>
+          <div class="principle"><span class="icon">✓</span><span>Tomador sem duplicidade</span></div>
+          <div class="principle"><span class="icon">!</span><span>Alíquota aguardando conferência</span></div>
+          <p style="margin-top: 10px"><span class="button primary">Transmitir agora →</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="eyebrow">Padrões fiscais</p>
+      <h2>Listas, auditoria e segurança</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Documento</th>
+            <th>Cliente</th>
+            <th>Status</th>
+            <th class="right">Valor</th>
+            <th>Retorno</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>NFS-e 1842</strong></td>
+            <td>Clínica Boa Vista Ltda.</td>
+            <td><span class="pill success"><span class="dot"></span>Autorizada</span></td>
+            <td class="right mono">R$ 1.280,00</td>
+            <td>Emitida em 8s</td>
+          </tr>
+          <tr>
+            <td><strong>NF-e 778</strong></td>
+            <td>Mercado Central Sul</td>
+            <td><span class="pill process"><span class="dot"></span>Processando</span></td>
+            <td class="right mono">R$ 6.240,90</td>
+            <td>Aguardando SEFAZ</td>
+          </tr>
+          <tr>
+            <td><strong>NF-e 779</strong></td>
+            <td>Oficina Rota 12</td>
+            <td><span class="pill danger"><span class="dot"></span>Rejeitada</span></td>
+            <td class="right mono">R$ 890,00</td>
+            <td>Rejeição 611</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <p class="eyebrow">Regras de uso</p>
+      <h2>Segurança e decisões fiscais</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Certificado A1</h3>
+          <p class="muted">Nunca exibir senha, buffer PFX ou XML completo em componentes de cliente.</p>
+        </div>
+        <div class="card">
+          <h3>XML como fonte</h3>
+          <p class="muted">DANFE e DANFSE são representações; o XML autorizado orienta a interface.</p>
+        </div>
+        <div class="card">
+          <h3>Estoque simplificado</h3>
+          <p class="muted">Entradas via XML e devoluções precisam mostrar impacto previsto antes de salvar.</p>
+        </div>
+      </div>
+      <p class="note" style="margin-top: 10px">
+        Referências consideradas: padrões de dashboards shadcn/ui, guia editorial e visual da Receita
+        Federal, e boas práticas de design systems operacionais para interfaces de alto volume.
+      </p>
+    </section>
+  </body>
+</html>
