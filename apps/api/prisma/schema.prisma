@@ -92,6 +92,8 @@ model Empresa {
   certificadosDigitais CertificadoDigital[]
   seriesFiscais        SerieFiscal[]
   notasFiscais         NotaFiscal[]
+  xmlImportacoes       XmlImportacao[]
+  movimentacoesEstoque MovimentacaoEstoque[]
 
   @@index([tenantId, createdAt(sort: Desc)])
   @@map("empresas")
@@ -178,7 +180,8 @@ model Produto {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  empresa Empresa @relation(fields: [tenantId], references: [tenantId])
+  empresa        Empresa                @relation(fields: [tenantId], references: [tenantId])
+  movimentacoes  MovimentacaoEstoque[]
 
   @@unique([tenantId, codigo])
   @@index([tenantId, ncm])
@@ -341,6 +344,61 @@ model NotaFiscalEvento {
   @@index([tenantId, createdAt(sort: Desc)])
   @@index([notaFiscalId, createdAt(sort: Desc)])
   @@map("nota_fiscal_eventos")
+}
+
+// ============================================================================
+// Importacao XML de compra + Estoque (Phase 5)
+// ============================================================================
+
+model XmlImportacao {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  chaveAcesso    String    @map("chave_acesso") @db.VarChar(44)
+  arquivoNome    String    @map("arquivo_nome")
+  fornecedorNome String    @map("fornecedor_nome")
+  fornecedorCnpj String?   @map("fornecedor_cnpj") @db.VarChar(14)
+  emitidaEm      DateTime? @map("emitida_em") @db.Timestamptz(6)
+  valorTotal     Decimal   @default(0) @map("valor_total") @db.Decimal(15, 2)
+  status         String
+  itens          Json
+  erroMensagem   String?   @map("erro_mensagem")
+  confirmedAt    DateTime? @map("confirmed_at") @db.Timestamptz(6)
+  undoneAt       DateTime? @map("undone_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  empresa        Empresa                @relation(fields: [tenantId], references: [tenantId])
+  movimentacoes  MovimentacaoEstoque[]
+
+  @@unique([tenantId, chaveAcesso])
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("xml_importacoes")
+}
+
+model MovimentacaoEstoque {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  produtoId        String?  @map("produto_id") @db.Uuid
+  xmlImportacaoId  String?  @map("xml_importacao_id") @db.Uuid
+  produtoCodigo    String   @map("produto_codigo")
+  produtoDescricao String   @map("produto_descricao")
+  tipo             String
+  origem           String
+  origemId         String?  @map("origem_id")
+  quantidade       Decimal  @db.Decimal(15, 3)
+  saldoApos        Decimal  @default(0) @map("saldo_apos") @db.Decimal(15, 3)
+  motivo           String
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  empresa       Empresa         @relation(fields: [tenantId], references: [tenantId])
+  produto       Produto?        @relation(fields: [produtoId], references: [id], onDelete: SetNull)
+  xmlImportacao XmlImportacao?  @relation(fields: [xmlImportacaoId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, produtoId, createdAt(sort: Desc)])
+  @@index([tenantId, tipo, createdAt(sort: Desc)])
+  @@map("movimentacoes_estoque")
 }
 
 // ============================================================================

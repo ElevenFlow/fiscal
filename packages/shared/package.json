@@ -20,6 +20,10 @@
     "./fiscal": {
       "types": "./dist/fiscal/index.d.ts",
       "default": "./dist/fiscal/index.js"
+    },
+    "./estoque": {
+      "types": "./dist/estoque/index.d.ts",
+      "default": "./dist/estoque/index.js"
     }
   },
   "scripts": {

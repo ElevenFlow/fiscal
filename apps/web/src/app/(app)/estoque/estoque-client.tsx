@@ -2,11 +2,6 @@
 
 import { DataTable, type DataTableColumn } from '@/components/cadastros/data-table';
 import {
-  type MovimentacaoEstoque,
-  movimentacoesEstoque as fixtureMovs,
-  produtos as fixtureProdutos,
-} from '@/lib/mock-data';
-import {
   Badge,
   Button,
   Card,
@@ -20,193 +15,50 @@ import {
   Separator,
   cn,
 } from '@nexo/ui';
-import { AlertTriangle, ArrowDown, ArrowUp, Plus, RefreshCw, TrendingUp } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  Loader2,
+  Plus,
+  RefreshCw,
+  TrendingUp,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-type TipoMov = 'entrada' | 'saida' | 'ajuste';
+type TipoMov = 'entrada' | 'saida' | 'ajuste' | 'estorno';
 type TipoFiltro = '' | TipoMov;
 type OrigemFiltro = '' | 'xml' | 'nfe' | 'manual';
 
-// Movimentações adicionais para preencher a tabela — complementa as 5 fixture
-// existentes. Totaliza ~20 linhas para demonstrar paginação e filtros.
-const movsExtras: MovimentacaoEstoque[] = [
-  {
-    id: 'mv-6',
-    data: '17/04/2026',
-    produtoSku: 'CAB-FLEX-2.5',
-    produtoDescricao: 'Cabo Flexível 2,5mm² 750V',
-    tipo: 'entrada',
-    quantidade: 30,
-    origem: 'Importação XML — Distribuidora Sul Brasil',
-    saldoApos: 72,
-  },
-  {
-    id: 'mv-7',
-    data: '16/04/2026',
-    produtoSku: 'LED-LUM-18W',
-    produtoDescricao: 'Luminária LED Plafon 18W',
-    tipo: 'saida',
-    quantidade: 12,
-    origem: 'NF-e 001243',
-    saldoApos: 45,
-  },
-  {
-    id: 'mv-8',
-    data: '15/04/2026',
-    produtoSku: 'CXO-ORG-25L',
-    produtoDescricao: 'Caixa Organizadora 25L',
-    tipo: 'saida',
-    quantidade: 14,
-    origem: 'NF-e 001242',
-    saldoApos: 120,
-  },
-  {
-    id: 'mv-9',
-    data: '14/04/2026',
-    produtoSku: 'TEC-USB-BR01',
-    produtoDescricao: 'Teclado USB ABNT2 Preto',
-    tipo: 'saida',
-    quantidade: 20,
-    origem: 'NF-e 001240',
-    saldoApos: 66,
-  },
-  {
-    id: 'mv-10',
-    data: '13/04/2026',
-    produtoSku: 'DIS-20A-BIP',
-    produtoDescricao: 'Disjuntor Bipolar 20A Curva C',
-    tipo: 'entrada',
-    quantidade: 20,
-    origem: 'Importação XML — Eletro Norte',
-    saldoApos: 10,
-  },
-  {
-    id: 'mv-11',
-    data: '12/04/2026',
-    produtoSku: 'CAB-FLEX-2.5',
-    produtoDescricao: 'Cabo Flexível 2,5mm² 750V',
-    tipo: 'ajuste',
-    quantidade: 2,
-    origem: 'Ajuste manual — divergência',
-    saldoApos: 50,
-  },
-  {
-    id: 'mv-12',
-    data: '11/04/2026',
-    produtoSku: 'TEC-USB-BR01',
-    produtoDescricao: 'Teclado USB ABNT2 Preto',
-    tipo: 'entrada',
-    quantidade: 30,
-    origem: 'Importação XML — Atacado Central',
-    saldoApos: 120,
-  },
-  {
-    id: 'mv-13',
-    data: '10/04/2026',
-    produtoSku: 'LED-LUM-18W',
-    produtoDescricao: 'Luminária LED Plafon 18W',
-    tipo: 'saida',
-    quantidade: 8,
-    origem: 'NF-e 001238',
-    saldoApos: 57,
-  },
-  {
-    id: 'mv-14',
-    data: '09/04/2026',
-    produtoSku: 'CXO-ORG-25L',
-    produtoDescricao: 'Caixa Organizadora 25L',
-    tipo: 'entrada',
-    quantidade: 50,
-    origem: 'Importação XML — Distribuidora Sul Brasil',
-    saldoApos: 134,
-  },
-  {
-    id: 'mv-15',
-    data: '08/04/2026',
-    produtoSku: 'DIS-20A-BIP',
-    produtoDescricao: 'Disjuntor Bipolar 20A Curva C',
-    tipo: 'saida',
-    quantidade: 6,
-    origem: 'NF-e 001236',
-    saldoApos: -4,
-  },
-  {
-    id: 'mv-16',
-    data: '07/04/2026',
-    produtoSku: 'CAB-FLEX-2.5',
-    produtoDescricao: 'Cabo Flexível 2,5mm² 750V',
-    tipo: 'saida',
-    quantidade: 10,
-    origem: 'NF-e 001234',
-    saldoApos: 48,
-  },
-  {
-    id: 'mv-17',
-    data: '05/04/2026',
-    produtoSku: 'LED-LUM-18W',
-    produtoDescricao: 'Luminária LED Plafon 18W',
-    tipo: 'entrada',
-    quantidade: 40,
-    origem: 'Importação XML — Atacado Central',
-    saldoApos: 65,
-  },
-  {
-    id: 'mv-18',
-    data: '04/04/2026',
-    produtoSku: 'TEC-USB-BR01',
-    produtoDescricao: 'Teclado USB ABNT2 Preto',
-    tipo: 'ajuste',
-    quantidade: -2,
-    origem: 'Ajuste manual — quebra',
-    saldoApos: 90,
-  },
-  {
-    id: 'mv-19',
-    data: '03/04/2026',
-    produtoSku: 'CXO-ORG-25L',
-    produtoDescricao: 'Caixa Organizadora 25L',
-    tipo: 'saida',
-    quantidade: 25,
-    origem: 'NF-e 001228',
-    saldoApos: 84,
-  },
-  {
-    id: 'mv-20',
-    data: '02/04/2026',
-    produtoSku: 'DIS-20A-BIP',
-    produtoDescricao: 'Disjuntor Bipolar 20A Curva C',
-    tipo: 'entrada',
-    quantidade: 10,
-    origem: 'Importação XML — Distribuidora Sul Brasil',
-    saldoApos: -2,
-  },
-];
-
-const todasMovs: MovimentacaoEstoque[] = [...fixtureMovs, ...movsExtras];
-
-const MOTIVOS = ['Inventário', 'Perda', 'Quebra', 'Doação', 'Outro'] as const;
-
-function classificaOrigem(origem: string): OrigemFiltro {
-  const lower = origem.toLowerCase();
-  if (lower.includes('importa') || lower.includes('xml')) return 'xml';
-  if (lower.includes('nf-e') || lower.includes('nfs-e')) return 'nfe';
-  if (lower.includes('manual') || lower.includes('ajuste')) return 'manual';
-  return '';
+interface MovimentacaoEstoque {
+  id: string;
+  createdAt: string;
+  produtoId: string | null;
+  produtoCodigo: string;
+  produtoDescricao: string;
+  tipo: TipoMov;
+  origem: 'xml' | 'nfe' | 'manual';
+  quantidade: string;
+  saldoApos: string;
+  motivo: string;
 }
 
-function parseDataBR(data: string): number {
-  // "DD/MM/AAAA" → timestamp
-  const parts = data.split('/').map((s) => Number.parseInt(s, 10));
-  const dd = parts[0] ?? 1;
-  const mm = parts[1] ?? 1;
-  const yyyy = parts[2] ?? 1970;
-  return new Date(yyyy, mm - 1, dd).getTime();
+interface ProdutoEstoque {
+  id: string;
+  codigo: string;
+  descricao: string;
+  unidade: string;
+  saldoAtual: number;
+  estoqueCritico: boolean;
 }
+
+const MOTIVOS = ['Inventario', 'Perda', 'Quebra', 'Doacao', 'Outro'] as const;
 
 export function EstoqueClient() {
-  const [rows] = useState<MovimentacaoEstoque[]>(todasMovs);
+  const [rows, setRows] = useState<MovimentacaoEstoque[]>([]);
+  const [produtos, setProdutos] = useState<ProdutoEstoque[]>([]);
   const [search, setSearch] = useState('');
   const [tipo, setTipo] = useState<TipoFiltro>('');
   const [origem, setOrigem] = useState<OrigemFiltro>('');
@@ -214,26 +66,34 @@ export function EstoqueClient() {
   const [dataFim, setDataFim] = useState('');
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    const inicioTs = dataInicio ? new Date(dataInicio).getTime() : null;
-    const fimTs = dataFim ? new Date(dataFim).getTime() : null;
-    return rows.filter((r) => {
-      if (term) {
-        const match =
-          r.produtoDescricao.toLowerCase().includes(term) ||
-          r.produtoSku.toLowerCase().includes(term);
-        if (!match) return false;
-      }
-      if (tipo && r.tipo !== tipo) return false;
-      if (origem && classificaOrigem(r.origem) !== origem) return false;
-      const ts = parseDataBR(r.data);
-      if (inicioTs !== null && ts < inicioTs) return false;
-      if (fimTs !== null && ts > fimTs) return false;
-      return true;
-    });
-  }, [rows, search, tipo, origem, dataInicio, dataFim]);
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search.trim()) params.set('search', search.trim());
+      if (tipo) params.set('tipo', tipo);
+      if (origem) params.set('origem', origem);
+      if (dataInicio) params.set('dataInicio', dataInicio);
+      if (dataFim) params.set('dataFim', dataFim);
+      const [movRes, posRes] = await Promise.all([
+        fetch(`/api/estoque/movimentacoes?${params.toString()}`, { cache: 'no-store' }),
+        fetch('/api/estoque/posicao', { cache: 'no-store' }),
+      ]);
+      if (!movRes.ok) throw new Error('Falha ao carregar movimentacoes');
+      setRows(await movRes.json());
+      setProdutos(posRes.ok ? await posRes.json() : []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao carregar estoque');
+    } finally {
+      setLoading(false);
+    }
+  }, [search, tipo, origem, dataInicio, dataFim]);
+
+  useEffect(() => {
+    void carregar();
+  }, [carregar]);
 
   const clearFilters = () => {
     setSearch('');
@@ -244,27 +104,26 @@ export function EstoqueClient() {
     setPage(1);
   };
 
-  // KPIs do período (baseados no conjunto filtrado)
   const kpis = useMemo(() => {
     let entradas = 0;
     let saidas = 0;
     let ajustes = 0;
-    for (const r of filtered) {
-      if (r.tipo === 'entrada') entradas += r.quantidade;
-      else if (r.tipo === 'saida') saidas += r.quantidade;
-      else ajustes += Math.abs(r.quantidade);
+    for (const r of rows) {
+      const qtd = Math.abs(Number(r.quantidade));
+      if (r.tipo === 'entrada') entradas += qtd;
+      else if (r.tipo === 'saida') saidas += qtd;
+      else ajustes += qtd;
     }
-    const criticos = fixtureProdutos.filter((p) => p.estoque < p.estoqueMinimo).length;
+    const criticos = produtos.filter((p) => p.estoqueCritico).length;
     return { entradas, saidas, ajustes, criticos };
-  }, [filtered]);
+  }, [rows, produtos]);
 
-  // Top 5 produtos mais movimentados (pelas linhas filtradas)
   const topProdutos = useMemo(() => {
     const map = new Map<string, { descricao: string; count: number }>();
-    for (const r of filtered) {
-      const existing = map.get(r.produtoSku);
+    for (const r of rows) {
+      const existing = map.get(r.produtoCodigo);
       if (existing) existing.count += 1;
-      else map.set(r.produtoSku, { descricao: r.produtoDescricao, count: 1 });
+      else map.set(r.produtoCodigo, { descricao: r.produtoDescricao, count: 1 });
     }
     const arr = Array.from(map.entries())
       .map(([sku, v]) => ({ sku, ...v }))
@@ -272,13 +131,17 @@ export function EstoqueClient() {
       .slice(0, 5);
     const max = arr[0]?.count ?? 1;
     return arr.map((p) => ({ ...p, pct: Math.round((p.count / max) * 100) }));
-  }, [filtered]);
+  }, [rows]);
 
   const columns: DataTableColumn<MovimentacaoEstoque>[] = [
     {
       key: 'data',
       header: 'Data',
-      render: (m) => <span className="font-mono text-xs">{m.data}</span>,
+      render: (m) => (
+        <span className="font-mono text-xs">
+          {new Date(m.createdAt).toLocaleDateString('pt-BR')}
+        </span>
+      ),
     },
     {
       key: 'produto',
@@ -286,103 +149,62 @@ export function EstoqueClient() {
       render: (m) => (
         <div>
           <div className="font-medium">{m.produtoDescricao}</div>
-          <div className="font-mono text-xs text-muted-foreground">{m.produtoSku}</div>
+          <div className="font-mono text-xs text-muted-foreground">{m.produtoCodigo}</div>
         </div>
       ),
     },
     {
       key: 'tipo',
       header: 'Tipo',
-      render: (m) => {
-        if (m.tipo === 'entrada') {
-          return (
-            <Badge
-              variant="secondary"
-              className="bg-brand-green/10 text-brand-green hover:bg-brand-green/20"
-            >
-              <ArrowUp className="mr-1 h-3 w-3" aria-hidden />
-              Entrada
-            </Badge>
-          );
-        }
-        if (m.tipo === 'saida') {
-          return (
-            <Badge
-              variant="secondary"
-              className="bg-brand-danger/10 text-brand-danger hover:bg-brand-danger/20"
-            >
-              <ArrowDown className="mr-1 h-3 w-3" aria-hidden />
-              Saída
-            </Badge>
-          );
-        }
-        return (
-          <Badge
-            variant="secondary"
-            className="bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20"
-          >
-            <RefreshCw className="mr-1 h-3 w-3" aria-hidden />
-            Ajuste
-          </Badge>
-        );
-      },
+      render: (m) => <TipoBadge tipo={m.tipo} />,
     },
     {
       key: 'quantidade',
       header: 'Qtd',
       align: 'right',
       render: (m) => {
-        const sign =
-          m.tipo === 'entrada' ? '+' : m.tipo === 'saida' ? '−' : m.quantidade < 0 ? '−' : '+';
-        const qtd = Math.abs(m.quantidade);
-        const cor =
-          m.tipo === 'entrada'
-            ? 'text-brand-green'
-            : m.tipo === 'saida'
-              ? 'text-brand-danger'
-              : 'text-brand-blue';
-        return (
-          <span className={cn('font-mono font-semibold tabular-nums', cor)}>
-            {sign}
-            {qtd}
-          </span>
-        );
+        const qtd = Number(m.quantidade);
+        const cor = qtd >= 0 ? 'text-brand-green' : 'text-brand-danger';
+        return <span className={cn('font-mono font-semibold tabular-nums', cor)}>{qtd}</span>;
       },
     },
     {
       key: 'origem',
       header: 'Origem',
-      render: (m) => <span className="text-xs">{m.origem}</span>,
+      render: (m) => (
+        <span className="text-xs">
+          {m.origem === 'xml' ? 'XML importado' : m.origem === 'manual' ? 'Manual' : 'NF-e'}
+        </span>
+      ),
     },
     {
       key: 'saldo',
-      header: 'Saldo após',
+      header: 'Saldo apos',
       align: 'right',
       render: (m) => (
         <span
           className={cn(
             'font-mono font-semibold tabular-nums',
-            m.saldoApos < 0 && 'text-brand-danger',
+            Number(m.saldoApos) < 0 && 'text-brand-danger',
           )}
         >
-          {m.saldoApos}
+          {Number(m.saldoApos)}
         </span>
       ),
     },
     {
-      key: 'usuario',
-      header: 'Usuário',
-      render: () => <span className="text-xs text-muted-foreground">Marcos Silva</span>,
+      key: 'motivo',
+      header: 'Motivo',
+      render: (m) => <span className="text-xs text-muted-foreground">{m.motivo}</span>,
     },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Movimentações de Estoque</h1>
-          <p className="text-muted-foreground">Histórico completo de entradas, saídas e ajustes.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Movimentacoes de Estoque</h1>
+          <p className="text-muted-foreground">Historico completo de entradas, saidas e ajustes.</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
@@ -390,117 +212,113 @@ export function EstoqueClient() {
         </Button>
       </div>
 
-      {/* Layout: tabela + card lateral */}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-4">
-          <DataTable
-            rows={filtered}
-            columns={columns}
-            getRowId={(m) => m.id}
-            search={search}
-            onSearchChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
-            searchPlaceholder="Buscar por produto ou SKU..."
-            filters={
-              <>
-                <select
-                  value={tipo}
-                  onChange={(e) => {
-                    setTipo(e.target.value as TipoFiltro);
-                    setPage(1);
-                  }}
-                  className={cn(
-                    'h-9 rounded-md border border-input bg-background px-3 text-sm',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  )}
-                  aria-label="Tipo"
-                >
-                  <option value="">Todos os tipos</option>
-                  <option value="entrada">Entrada</option>
-                  <option value="saida">Saída</option>
-                  <option value="ajuste">Ajuste</option>
-                </select>
-                <select
-                  value={origem}
-                  onChange={(e) => {
-                    setOrigem(e.target.value as OrigemFiltro);
-                    setPage(1);
-                  }}
-                  className={cn(
-                    'h-9 rounded-md border border-input bg-background px-3 text-sm',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  )}
-                  aria-label="Origem"
-                >
-                  <option value="">Todas as origens</option>
-                  <option value="xml">XML Importado</option>
-                  <option value="nfe">NF-e Emitida</option>
-                  <option value="manual">Manual</option>
-                </select>
-                <input
-                  type="date"
-                  value={dataInicio}
-                  onChange={(e) => {
-                    setDataInicio(e.target.value);
-                    setPage(1);
-                  }}
-                  aria-label="Data de início"
-                  className={cn(
-                    'h-9 rounded-md border border-input bg-background px-2 text-sm',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  )}
-                />
-                <input
-                  type="date"
-                  value={dataFim}
-                  onChange={(e) => {
-                    setDataFim(e.target.value);
-                    setPage(1);
-                  }}
-                  aria-label="Data de fim"
-                  className={cn(
-                    'h-9 rounded-md border border-input bg-background px-2 text-sm',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  )}
-                />
-              </>
-            }
-            onClearFilters={clearFilters}
-            page={page}
-            pageSize={10}
-            onPageChange={setPage}
-            totalLabelSingular="movimentação"
-            totalLabelPlural="movimentações"
-            emptyTitle="Nenhuma movimentação encontrada"
-            emptyDescription="Ajuste os filtros ou registre um ajuste manual."
-          />
+          {loading ? (
+            <Card>
+              <CardContent className="flex min-h-[240px] items-center justify-center text-muted-foreground">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Carregando estoque...
+              </CardContent>
+            </Card>
+          ) : (
+            <DataTable
+              rows={rows}
+              columns={columns}
+              getRowId={(m) => m.id}
+              search={search}
+              onSearchChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+              searchPlaceholder="Buscar por produto ou SKU..."
+              filters={
+                <>
+                  <select
+                    value={tipo}
+                    onChange={(e) => {
+                      setTipo(e.target.value as TipoFiltro);
+                      setPage(1);
+                    }}
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label="Tipo"
+                  >
+                    <option value="">Todos os tipos</option>
+                    <option value="entrada">Entrada</option>
+                    <option value="saida">Saida</option>
+                    <option value="ajuste">Ajuste</option>
+                    <option value="estorno">Estorno</option>
+                  </select>
+                  <select
+                    value={origem}
+                    onChange={(e) => {
+                      setOrigem(e.target.value as OrigemFiltro);
+                      setPage(1);
+                    }}
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label="Origem"
+                  >
+                    <option value="">Todas as origens</option>
+                    <option value="xml">XML importado</option>
+                    <option value="nfe">NF-e emitida</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                  <input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => {
+                      setDataInicio(e.target.value);
+                      setPage(1);
+                    }}
+                    aria-label="Data de inicio"
+                    className="h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <input
+                    type="date"
+                    value={dataFim}
+                    onChange={(e) => {
+                      setDataFim(e.target.value);
+                      setPage(1);
+                    }}
+                    aria-label="Data de fim"
+                    className="h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </>
+              }
+              onClearFilters={clearFilters}
+              page={page}
+              pageSize={10}
+              onPageChange={setPage}
+              totalLabelSingular="movimentacao"
+              totalLabelPlural="movimentacoes"
+              emptyTitle="Nenhuma movimentacao encontrada"
+              emptyDescription="Importe um XML ou registre um ajuste manual."
+            />
+          )}
         </div>
 
-        {/* Card lateral direito — vira footer em <1024px via order-last */}
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           <Card>
             <CardContent className="space-y-4 p-4">
               <div>
-                <h3 className="text-sm font-semibold">Resumo do período</h3>
-                <p className="text-xs text-muted-foreground">KPIs das movimentações filtradas.</p>
+                <h3 className="text-sm font-semibold">Resumo do periodo</h3>
+                <p className="text-xs text-muted-foreground">KPIs das movimentacoes filtradas.</p>
               </div>
               <div className="space-y-2">
                 <KpiLine
-                  icon={<ArrowUp className="h-4 w-4" aria-hidden />}
+                  icon={<ArrowUp className="h-4 w-4" />}
                   label="Total entradas"
                   value={`${kpis.entradas} un`}
                   tone="success"
                 />
                 <KpiLine
-                  icon={<ArrowDown className="h-4 w-4" aria-hidden />}
-                  label="Total saídas"
+                  icon={<ArrowDown className="h-4 w-4" />}
+                  label="Total saidas"
                   value={`${kpis.saidas} un`}
                   tone="danger"
                 />
                 <KpiLine
-                  icon={<RefreshCw className="h-4 w-4" aria-hidden />}
+                  icon={<RefreshCw className="h-4 w-4" />}
                   label="Ajustes"
                   value={`${kpis.ajustes} un`}
                   tone="info"
@@ -510,8 +328,8 @@ export function EstoqueClient() {
                   className="flex items-center justify-between rounded-md border border-brand-warning/30 bg-brand-warning/5 px-3 py-2 text-sm transition-colors hover:bg-brand-warning/10"
                 >
                   <span className="flex items-center gap-2 text-brand-warning">
-                    <AlertTriangle className="h-4 w-4" aria-hidden />
-                    Produtos em estoque crítico
+                    <AlertTriangle className="h-4 w-4" />
+                    Produtos em estoque critico
                   </span>
                   <span className="font-mono font-semibold tabular-nums text-brand-warning">
                     {kpis.criticos}
@@ -523,11 +341,11 @@ export function EstoqueClient() {
 
               <div>
                 <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <TrendingUp className="h-3 w-3" aria-hidden />
+                  <TrendingUp className="h-3 w-3" />
                   Top 5 mais movimentados
                 </h4>
                 {topProdutos.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Sem movimentações no período.</p>
+                  <p className="text-xs text-muted-foreground">Sem movimentacoes no periodo.</p>
                 ) : (
                   <ul className="space-y-2">
                     {topProdutos.map((p) => (
@@ -551,8 +369,44 @@ export function EstoqueClient() {
         </aside>
       </div>
 
-      <AjusteManualDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <AjusteManualDialog
+        open={dialogOpen}
+        produtos={produtos}
+        onOpenChange={setDialogOpen}
+        onSaved={() => void carregar()}
+      />
     </div>
+  );
+}
+
+function TipoBadge({ tipo }: { tipo: TipoMov }) {
+  if (tipo === 'entrada') {
+    return (
+      <Badge
+        variant="secondary"
+        className="bg-brand-green/10 text-brand-green hover:bg-brand-green/20"
+      >
+        <ArrowUp className="mr-1 h-3 w-3" />
+        Entrada
+      </Badge>
+    );
+  }
+  if (tipo === 'saida') {
+    return (
+      <Badge
+        variant="secondary"
+        className="bg-brand-danger/10 text-brand-danger hover:bg-brand-danger/20"
+      >
+        <ArrowDown className="mr-1 h-3 w-3" />
+        Saida
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20">
+      <RefreshCw className="mr-1 h-3 w-3" />
+      {tipo === 'estorno' ? 'Estorno' : 'Ajuste'}
+    </Badge>
   );
 }
 
@@ -586,33 +440,51 @@ function KpiLine({
 
 function AjusteManualDialog({
   open,
+  produtos,
   onOpenChange,
+  onSaved,
 }: {
   open: boolean;
+  produtos: ProdutoEstoque[];
   onOpenChange: (v: boolean) => void;
+  onSaved: () => void;
 }) {
-  const [produtoSku, setProdutoSku] = useState('');
-  const [tipo, setTipo] = useState<TipoMov>('ajuste');
+  const [produtoId, setProdutoId] = useState('');
+  const [tipo, setTipo] = useState<'entrada' | 'saida' | 'ajuste'>('ajuste');
   const [quantidade, setQuantidade] = useState('');
-  const [motivo, setMotivo] = useState<(typeof MOTIVOS)[number]>('Inventário');
-  const [observacao, setObservacao] = useState('');
+  const [motivo, setMotivo] = useState<(typeof MOTIVOS)[number]>('Inventario');
+  const [saving, setSaving] = useState(false);
 
   const reset = () => {
-    setProdutoSku('');
+    setProdutoId('');
     setTipo('ajuste');
     setQuantidade('');
-    setMotivo('Inventário');
-    setObservacao('');
+    setMotivo('Inventario');
   };
 
-  const submit = () => {
-    if (!produtoSku || !quantidade) {
+  const submit = async () => {
+    if (!produtoId || !quantidade) {
       toast.error('Selecione um produto e informe a quantidade.');
       return;
     }
-    toast.success('Movimentação registrada (mock)');
-    reset();
-    onOpenChange(false);
+    setSaving(true);
+    try {
+      const res = await fetch('/api/estoque/movimentacoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ produtoId, tipo, quantidade, motivo }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload?.message ?? 'Falha ao registrar ajuste');
+      toast.success('Movimentacao registrada');
+      reset();
+      onOpenChange(false);
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao registrar ajuste');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -627,7 +499,7 @@ function AjusteManualDialog({
         <DialogHeader>
           <DialogTitle>Ajuste manual de estoque</DialogTitle>
           <DialogDescription>
-            Registre uma movimentação manual — entrada, saída ou ajuste fino de inventário.
+            Registre uma entrada, saida ou ajuste com motivo obrigatorio.
           </DialogDescription>
         </DialogHeader>
 
@@ -638,17 +510,14 @@ function AjusteManualDialog({
             </label>
             <select
               id="produto"
-              value={produtoSku}
-              onChange={(e) => setProdutoSku(e.target.value)}
-              className={cn(
-                'h-9 w-full rounded-md border border-input bg-background px-3 text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              )}
+              value={produtoId}
+              onChange={(e) => setProdutoId(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="">Selecione um produto...</option>
-              {fixtureProdutos.map((p) => (
-                <option key={p.id} value={p.sku}>
-                  {p.descricao} ({p.sku})
+              {produtos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.descricao} ({p.codigo}) - saldo {p.saldoAtual}
                 </option>
               ))}
             </select>
@@ -656,7 +525,7 @@ function AjusteManualDialog({
 
           <div>
             <span className="mb-1 block text-xs font-medium">Tipo</span>
-            <div className="flex gap-2" role="radiogroup" aria-label="Tipo de movimentação">
+            <div className="flex gap-2" role="radiogroup" aria-label="Tipo de movimentacao">
               {(['entrada', 'saida', 'ajuste'] as const).map((t) => (
                 <label
                   key={t}
@@ -675,7 +544,7 @@ function AjusteManualDialog({
                     onChange={() => setTipo(t)}
                     className="sr-only"
                   />
-                  {t === 'entrada' ? 'Entrada' : t === 'saida' ? 'Saída' : 'Ajuste'}
+                  {t === 'entrada' ? 'Entrada' : t === 'saida' ? 'Saida' : 'Ajuste'}
                 </label>
               ))}
             </div>
@@ -692,11 +561,8 @@ function AjusteManualDialog({
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value)}
                 min="0"
-                step="1"
-                className={cn(
-                  'h-9 w-full rounded-md border border-input bg-background px-3 text-sm tabular-nums',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                )}
+                step="0.001"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             <div>
@@ -707,10 +573,7 @@ function AjusteManualDialog({
                 id="motivo"
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value as (typeof MOTIVOS)[number])}
-                className={cn(
-                  'h-9 w-full rounded-md border border-input bg-background px-3 text-sm',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                )}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {MOTIVOS.map((m) => (
                   <option key={m} value={m}>
@@ -720,30 +583,16 @@ function AjusteManualDialog({
               </select>
             </div>
           </div>
-
-          <div>
-            <label htmlFor="obs" className="mb-1 block text-xs font-medium">
-              Observação (opcional)
-            </label>
-            <textarea
-              id="obs"
-              value={observacao}
-              onChange={(e) => setObservacao(e.target.value)}
-              rows={3}
-              className={cn(
-                'w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              )}
-              placeholder="Detalhes sobre o ajuste..."
-            />
-          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={submit}>Registrar ajuste</Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Registrar ajuste
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

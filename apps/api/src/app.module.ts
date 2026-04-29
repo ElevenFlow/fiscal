@@ -23,6 +23,7 @@ import { CertificadosModule } from './modules/certificados/certificados.module';
 // === Phase 2 Series (02-06) imports — DO NOT MOVE ===
 import { SeriesModule } from './modules/series/series.module';
 import { FiscalModule } from './modules/fiscal/fiscal.module';
+import { EstoqueModule } from './modules/estoque/estoque.module';
 // === End Phase 2 Series imports ===
 // === Phase 2 Integrations (02-03) imports — DO NOT MOVE ===
 import { IntegrationsModule } from './modules/integrations/integrations.module';
@@ -72,6 +73,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     // === Phase 2 Series (02-06) — DO NOT MOVE ===
     SeriesModule,
     FiscalModule,
+    EstoqueModule,
     // === End Phase 2 Series ===
     // === Phase 2 Integrations (02-03) — DO NOT MOVE ===
     IntegrationsModule,
