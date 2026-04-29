@@ -24,6 +24,10 @@
     "./estoque": {
       "types": "./dist/estoque/index.d.ts",
       "default": "./dist/estoque/index.js"
+    },
+    "./operacional": {
+      "types": "./dist/operacional/index.d.ts",
+      "default": "./dist/operacional/index.js"
     }
   },
   "scripts": {

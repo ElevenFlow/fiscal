@@ -1,9 +1,7 @@
 'use client';
 
-import { DashboardAdmin } from '@/components/dashboard/dashboard-admin';
-import { DashboardContabilidade } from '@/components/dashboard/dashboard-contabilidade';
-import { DashboardEmpresa } from '@/components/dashboard/dashboard-empresa';
 import { useMockRole } from '@/lib/mock-auth';
+import { DashboardOperacionalClient } from './dashboard-operacional-client';
 
 /**
  * Dashboard principal. Renderiza a variação conforme o perfil ativo no
@@ -12,8 +10,5 @@ import { useMockRole } from '@/lib/mock-auth';
  */
 export default function DashboardPage() {
   const role = useMockRole();
-
-  if (role === 'admin') return <DashboardAdmin />;
-  if (role === 'contabilidade') return <DashboardContabilidade />;
-  return <DashboardEmpresa />;
+  return <DashboardOperacionalClient role={role} />;
 }

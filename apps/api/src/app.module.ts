@@ -37,6 +37,7 @@ import { LookupModule } from './modules/lookup/lookup.module';
 import { HealthModule } from './modules/health/health.module';
 import { LgpdModule } from './modules/lgpd/lgpd.module';
 import { SentryModule } from './modules/observability/sentry.module';
+import { OperacionalModule } from './modules/operacional/operacional.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { RolesGuard } from './modules/rbac/roles.guard';
 import { StorageModule } from './modules/storage/storage.module';
@@ -84,6 +85,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     // === Phase 2 Lookup (02-08) — DO NOT MOVE ===
     LookupModule,
     // === End Phase 2 Lookup ===
+    OperacionalModule,
   ],
   providers: [
     // Ordem CRÍTICA (Plan 02.1-02):
