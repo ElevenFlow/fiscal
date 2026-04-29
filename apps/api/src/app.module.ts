@@ -6,6 +6,7 @@ import { DbModule } from './db/db.module';
 import { LoggerModule } from './logger/logger.module';
 import { AuditInterceptor } from './modules/audit/audit.interceptor';
 import { AuditModule } from './modules/audit/audit.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 // === Auth In-House (Phase 02.1) — substitui Clerk ===
 import { AuthGuard } from './modules/auth/auth.guard';
@@ -56,6 +57,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     TenantsModule, // aplica TenantContextMiddleware globalmente
     RbacModule,
     AuditModule,
+    AdminModule,
     StorageModule, // S3Service + ObjectLockVerifier (FOUND-11)
     LgpdModule, // Portal do titular (FOUND-12) — BLOCKER #2 Option A
     SentryModule, // Observability — Sentry bootstrap no-op sem DSN (Plan 01-10)

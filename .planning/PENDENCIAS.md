@@ -47,6 +47,7 @@ Prioridade sugerida:
 | PEND-022 | Phase 6 / Documentos | Exportação em lote ZIP com XML/PDF reais e envio por e-mail | CSV foi entregue; ZIP/e-mail dependem de empacotamento temporário, storage e provedor de e-mail transacional | Antes de liberar envio em lote para clientes | P1 | Aberta |
 | PEND-023 | Phase 6 / Alertas | Persistir resolução, deduplicação 24h e regras customizadas de alertas | Alertas atuais são virtuais, derivados de certificados, documentos e estoque; persistência exige tabela própria e jobs recorrentes | Hardening de alertas | P1 | Aberta |
 | PEND-024 | Phase 6 / Dashboards | Materialized views de KPIs e refresh incremental | Dashboards calculam sobre tabelas operacionais no MVP; budget de 2s em carteira grande exige views materializadas | Antes de carteira contábil com volume real | P2 | Aberta |
+| PEND-025 | Phase 7 / Usuários e E-mails | Ligar provedor transacional para convites, redefinição de senha e teste/envio de templates fiscais | A Fase 7 criou usuários, perfis e templates persistidos; envio real depende da escolha de provedor SMTP/API e validação de domínio/remetente | Antes de piloto com usuários convidados por e-mail | P1 | Aberta |
 
 ## Pendências Da Próxima Fase
 

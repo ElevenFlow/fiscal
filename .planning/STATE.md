@@ -2,20 +2,20 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase_6_completed
+status: phase_7_completed
 last_updated: "2026-04-29T00:00:00.000Z"
 progress:
   total_phases: 8
-  completed_phases: 7
-  total_plans: 30
-  completed_plans: 30
-  percent: 96
+  completed_phases: 8
+  total_plans: 31
+  completed_plans: 31
+  percent: 100
 ---
 
 # Nexo Fiscal — STATE
 
 **Last updated:** 2026-04-29
-**Status:** Phase 6 base completed; ready for Phase 7 planning/research
+**Status:** Phase 7 base completed; MVP roadmap técnico concluído
 
 ---
 
@@ -23,20 +23,20 @@ progress:
 
 **Project:** Nexo Fiscal
 **Core Value:** Emitir qualquer nota fiscal (NFS-e, NF-e ou devolução) em menos de um minuto, com a contabilidade responsável enxergando tudo em tempo real e sem fricção operacional para o empresário final.
-**Current focus:** Phase 07 — Configurações + Usuários + Hardening
+**Current focus:** Pós-MVP — piloto controlado e pendências operacionais
 
 ---
 
 ## Current Position
 
-Phase: 7
+Phase: pós-roadmap
 Plan: Not started
-**Fases concluídas:** 1, 2, 02.1, 3, 4, 5 e 6
-**Plans/Subfases:** 30 / 30 ✅ (01-01..01-10, 02-01..02-09, 02.1-01..02.1-04, 03-01..03-04, 04-01, 05-01, 06-01)
-**Progress:** `[███████████████████░] 96%` (7/8 blocos concluídos, contando 02.1 como inserção técnica)
+**Fases concluídas:** 1, 2, 02.1, 3, 4, 5, 6 e 7
+**Plans/Subfases:** 31 / 31 ✅ (01-01..01-10, 02-01..02-09, 02.1-01..02.1-04, 03-01..03-04, 04-01, 05-01, 06-01, 07-01)
+**Progress:** `[████████████████████] 100%` (roadmap v1 técnico concluído)
 **Pendências centralizadas:** `.planning/PENDENCIAS.md`
 
-**Next action:** `/gsd-plan-phase 7` para configurações, usuários, auditoria na UI e hardening.
+**Next action:** definir piloto controlado, provedor transacional de e-mail e validações em ambiente real.
 
 ---
 
@@ -51,7 +51,7 @@ Plan: Not started
 | 4 | Emissão NFS-e + Nota de Devolução | 2 | ✅ Complete técnico/base; integração municipal real pendente |
 | 5 | Importação XML + Estoque | 14 | ✅ Complete técnico/base; jobs e undo pendentes |
 | 6 | Documentos + Alertas + Dashboards (Diferencial) | 19 | ✅ Complete técnico/base; SSE, ZIP/e-mail e materialized views pendentes |
-| 7 | Configurações + Usuários + Hardening | 5 | Next |
+| 7 | Configurações + Usuários + Hardening | 5 | ✅ Complete técnico/base; e-mail transacional pendente |
 
 Coverage: 88/88 requirements mapped.
 
@@ -84,7 +84,7 @@ Após Phase 1, foi feito um **scaffold de UI mock para todas as Phases 2–7** (
 - Importação XML + revisão produto↔item + movimentações de estoque
 - Documentos fiscais (consulta) + alertas + auditoria/logs + usuários + configurações
 
-Adicional pós-mock: a Phase 2 integrou cadastros/certificado/séries à API real; a Phase 02.1 substituiu Clerk por auth in-house (JWT HS256 + argon2id + cookie HttpOnly); a Phase 3 implementou a base NF-e direta SEFAZ-SC; a Phase 4 implementou NFS-e operacional SC sem transmissão municipal real e Nota de Devolução interna; a Phase 5 implementou importação XML segura e estoque por movimentações reais; a Phase 6 implementou documentos unificados, alertas e dashboards operacionais.
+Adicional pós-mock: a Phase 2 integrou cadastros/certificado/séries à API real; a Phase 02.1 substituiu Clerk por auth in-house (JWT HS256 + argon2id + cookie HttpOnly); a Phase 3 implementou a base NF-e direta SEFAZ-SC; a Phase 4 implementou NFS-e operacional SC sem transmissão municipal real e Nota de Devolução interna; a Phase 5 implementou importação XML segura e estoque por movimentações reais; a Phase 6 implementou documentos unificados, alertas e dashboards operacionais; a Phase 7 implementou configurações, usuários e auditoria conectados à API.
 
 **Validação Phase 3 em 2026-04-29:** `pnpm.cmd --filter @nexo/api test -- fiscal-gateway.spec.ts fiscal-xml-signature.spec.ts` passou (6/6); `pnpm.cmd --filter @nexo/api typecheck`, `pnpm.cmd --filter @nexo/web typecheck`, `pnpm.cmd --filter @nexo/api build` e `pnpm.cmd --filter @nexo/web build` passaram. Observação: runtime local usou Node v20.17.0, abaixo do alvo Node 22, gerando warning de engine; build web manteve warning conhecido de OpenTelemetry/Sentry.
 
@@ -124,7 +124,7 @@ Adicional pós-mock: a Phase 2 integrou cadastros/certificado/séries à API rea
 - [ ] Aplicar/confirmar migrations Phase 5 no banco alvo e validar RLS de `xml_importacoes`/`movimentacoes_estoque`.
 - [ ] Retomar pendências Phase 5: worker sem egress, XSD completo, materialized view, undo 24h e jobs de alertas/reconciliação.
 - [ ] Retomar pendências Phase 6: SSE por tenant, ZIP/XML/PDF em lote com e-mail, alertas persistentes/deduplicados e materialized views de KPIs.
-- [ ] `/gsd-plan-phase 7` para Configurações + Usuários + Hardening.
+- [ ] Definir provedor transacional para convites, redefinição de senha e envio de documentos fiscais (`PEND-025`).
 
 ### Active Blockers
 
@@ -159,10 +159,11 @@ Nenhum.
 - Phase 4 executada e validada: testes fiscais 9/9, shared/API/web typecheck, API/web build. Rotas web novas no build: `/api/fiscal/nfse`, `/api/fiscal/nfse/[id]/autorizar-interno`, `/api/fiscal/devolucoes`, `/api/fiscal/devolucoes/[id]/autorizar-interno`, XML/PDF.
 - Phase 5 executada e validada: parser XML 2/2, shared/API/web typecheck, API/web build. Rotas web novas no build: `/api/estoque/importacoes`, `/api/estoque/importacoes/xml`, `/api/estoque/importacoes/[id]/confirmar`, `/api/estoque/movimentacoes`, `/api/estoque/posicao`.
 - Phase 6 executada e validada: shared/API/web typecheck, shared/API/web build. Rotas web novas no build: `/api/documentos`, `/api/documentos/export`, `/api/alertas`, `/api/alertas/[id]/resolver`, `/api/dashboard`.
+- Phase 7 executada e validada: shared build, API/web typecheck. Rotas web novas: `/api/configuracoes`, `/api/usuarios`, `/api/usuarios/[id]`, `/api/usuarios/[id]/acao`, `/api/auditoria`.
 
 ### Next session
 
-- `/gsd-plan-phase 7` com foco em configurações, usuários/perfis, auditoria na UI e hardening pré-GA.
+- Planejar piloto controlado e validações de produção.
 
 ---
 

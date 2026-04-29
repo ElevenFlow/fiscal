@@ -16,7 +16,7 @@
 - [x] **Phase 4: Emissão NFS-e + Nota de Devolução** — Base operacional de NFS-e orientada a Santa Catarina, sem integração municipal real neste momento, e nota de devolução vinculada com CFOP inverso
 - [x] **Phase 5: Importação XML + Estoque** — Upload seguro de XML de compra, matching de produtos, event sourcing de movimentações e alertas de estoque
 - [x] **Phase 6: Documentos + Alertas + Dashboards (Diferencial)** — Consulta unificada, Central de Alertas e os três dashboards, incluindo a carteira consolidada da contabilidade
-- [ ] **Phase 7: Configurações + Usuários + Hardening** — Configurações da empresa, gestão de usuários/perfis, auditoria na UI e hardening pré-GA
+- [x] **Phase 7: Configurações + Usuários + Hardening** — Configurações da empresa, gestão de usuários/perfis, auditoria na UI e hardening pré-GA
 
 ---
 
@@ -158,9 +158,11 @@ Plans:
   2. Empresa consegue configurar templates de e-mail de envio de nota (assunto, corpo, remetente, cc padrão) por empresa e ver o resultado aplicado na próxima emissão
   3. Admin/Contabilidade consegue gerenciar usuários (criar, editar, desativar, bloquear, reenviar convite, redefinir senha) e atribuir perfis; perfis padrão (Admin, Contador Master, Operador Empresa, Visualizador) são não-editáveis, mas permissões customizáveis por célula (Visualizar/Criar/Editar/Excluir/Emitir × módulo) funcionam
   4. Qualquer usuário autorizado consegue abrir os logs de auditoria pela UI com filtros (usuário, tipo de ação, entidade, período, IP, resultado) e expandir o diff antes/depois de cada alteração crítica
-**Plans**: TBD
+**Plans**: 1 plano — concluído em 2026-04-29
 **UI hint**: yes
 **Research flag**: no
+**Delivered**: `07-01-SUMMARY.md` — contratos `admin`, rotas API/proxies Next, tela `/config`, gestão real de usuários/perfis e auditoria conectada ao `audit_log`.
+**Execution note**: por pedido, não foi feita priorização das pendências abertas das fases 3 a 6. A única pendência nova é `PEND-025` para provedor transacional de e-mail.
 
 ---
 
@@ -175,7 +177,7 @@ Plans:
 | 4. Emissão NFS-e + Nota de Devolução | 1/1 | Complete técnico/base; integração municipal real pendente | 2026-04-29 |
 | 5. Importação XML + Estoque | 1/1 | Complete técnico/base; jobs e undo pendentes | 2026-04-29 |
 | 6. Documentos + Alertas + Dashboards (Diferencial) | 1/1 | Complete técnico/base; SSE, ZIP/e-mail e materialized views pendentes | 2026-04-29 |
-| 7. Configurações + Usuários + Hardening | 0/TBD | Next | - |
+| 7. Configurações + Usuários + Hardening | 1/1 | Complete técnico/base; provedor transacional de e-mail pendente | 2026-04-29 |
 
 ---
 
@@ -199,4 +201,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-04-29 by Codex execution (Phase 6 base completed; Phase 7 next)*
+*Last updated: 2026-04-29 by Codex execution (Phase 7 base completed; MVP roadmap complete)*

@@ -6,3 +6,4 @@ export * from './auth/index';
 export * from './fiscal/index';
 export * from './estoque/index';
 export * from './operacional/index';
+export * from './admin/index';

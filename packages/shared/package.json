@@ -28,6 +28,10 @@
     "./operacional": {
       "types": "./dist/operacional/index.d.ts",
       "default": "./dist/operacional/index.js"
+    },
+    "./admin": {
+      "types": "./dist/admin/index.d.ts",
+      "default": "./dist/admin/index.js"
     }
   },
   "scripts": {
