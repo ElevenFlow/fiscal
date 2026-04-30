@@ -1,6 +1,6 @@
 # Nexo Fiscal — Pendências Planejadas
 
-**Última atualização:** 2026-04-29
+**Última atualização:** 2026-04-30
 
 Este arquivo centraliza itens conscientemente deixados para depois durante a execução dos planos. A ideia é evitar que decisões de adiamento fiquem perdidas em `SUMMARY.md` individuais.
 
@@ -48,15 +48,16 @@ Prioridade sugerida:
 | PEND-023 | Phase 6 / Alertas | Persistir resolução, deduplicação 24h e regras customizadas de alertas | Alertas atuais são virtuais, derivados de certificados, documentos e estoque; persistência exige tabela própria e jobs recorrentes | Hardening de alertas | P1 | Aberta |
 | PEND-024 | Phase 6 / Dashboards | Materialized views de KPIs e refresh incremental | Dashboards calculam sobre tabelas operacionais no MVP; budget de 2s em carteira grande exige views materializadas | Antes de carteira contábil com volume real | P2 | Aberta |
 | PEND-025 | Phase 7 / Usuários e E-mails | Ligar provedor transacional para convites, redefinição de senha e teste/envio de templates fiscais | A Fase 7 criou usuários, perfis e templates persistidos; envio real depende da escolha de provedor SMTP/API e validação de domínio/remetente | Antes de piloto com usuários convidados por e-mail | P1 | Aberta |
+| PEND-026 | Phase 8 / Go-live operacional | Definir se o próximo passo será um piloto controlado ou atacar pendências críticas primeiro | A decisão depende de apetite de risco, cliente piloto disponível, ambiente real e aceite sobre as pendências P0/P1 ainda abertas | Reunião de go/no-go pós-validação operacional | P0 | Aberta |
 
 ## Pendências Da Próxima Fase
 
-Itens que devem ser decididos logo no research/plan da Phase 7:
+Itens que devem ser decididos antes do próximo ciclo de execução:
 
-- Quais pendências de hardening entram junto com configurações e usuários.
+- Se o próximo passo será piloto controlado ou ataque prévio às pendências críticas (`PEND-026`).
+- Quais pendências P0/P1 entram antes de expor o produto a cliente real.
 - Qual provedor de e-mail transacional será usado para envio de documentos fiscais.
-- Se os KPIs serão materializados por tenant, por contabilidade ou por ambos.
-- Como a resolução persistente de alertas se conecta aos logs de auditoria.
+- Como serão validadas as migrations, variáveis de produção e credenciais externas no ambiente alvo.
 
 ## Itens Resolvidos
 

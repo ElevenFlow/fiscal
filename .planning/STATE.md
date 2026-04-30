@@ -2,20 +2,20 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase_7_completed
-last_updated: "2026-04-29T00:00:00.000Z"
+status: phase_8_operational_validation_completed
+last_updated: "2026-04-30T00:00:00.000Z"
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 31
-  completed_plans: 31
+  total_phases: 9
+  completed_phases: 9
+  total_plans: 32
+  completed_plans: 32
   percent: 100
 ---
 
 # Nexo Fiscal — STATE
 
-**Last updated:** 2026-04-29
-**Status:** Phase 7 base completed; MVP roadmap técnico concluído
+**Last updated:** 2026-04-30
+**Status:** Phase 8 operational validation completed; MVP técnico validado localmente
 
 ---
 
@@ -23,20 +23,20 @@ progress:
 
 **Project:** Nexo Fiscal
 **Core Value:** Emitir qualquer nota fiscal (NFS-e, NF-e ou devolução) em menos de um minuto, com a contabilidade responsável enxergando tudo em tempo real e sem fricção operacional para o empresário final.
-**Current focus:** Pós-MVP — piloto controlado e pendências operacionais
+**Current focus:** Pós-MVP — decisão de go/no-go entre piloto controlado e ataque prévio às pendências críticas
 
 ---
 
 ## Current Position
 
-Phase: pós-roadmap
-Plan: Not started
-**Fases concluídas:** 1, 2, 02.1, 3, 4, 5, 6 e 7
-**Plans/Subfases:** 31 / 31 ✅ (01-01..01-10, 02-01..02-09, 02.1-01..02.1-04, 03-01..03-04, 04-01, 05-01, 06-01, 07-01)
-**Progress:** `[████████████████████] 100%` (roadmap v1 técnico concluído)
+Phase: pós-roadmap / Fase 8 operacional
+Plan: 08-01 completed
+**Fases concluídas:** 1, 2, 02.1, 3, 4, 5, 6, 7 e 8 operacional
+**Plans/Subfases:** 32 / 32 ✅ (01-01..01-10, 02-01..02-09, 02.1-01..02.1-04, 03-01..03-04, 04-01, 05-01, 06-01, 07-01, 08-01)
+**Progress:** `[████████████████████] 100%` (roadmap v1 técnico + validação operacional local concluídos)
 **Pendências centralizadas:** `.planning/PENDENCIAS.md`
 
-**Next action:** definir piloto controlado, provedor transacional de e-mail e validações em ambiente real.
+**Next action:** decidir `PEND-026`: piloto controlado agora ou ataque prévio às pendências críticas P0/P1.
 
 ---
 
@@ -52,6 +52,7 @@ Plan: Not started
 | 5 | Importação XML + Estoque | 14 | ✅ Complete técnico/base; jobs e undo pendentes |
 | 6 | Documentos + Alertas + Dashboards (Diferencial) | 19 | ✅ Complete técnico/base; SSE, ZIP/e-mail e materialized views pendentes |
 | 7 | Configurações + Usuários + Hardening | 5 | ✅ Complete técnico/base; e-mail transacional pendente |
+| 8 | Validação Operacional Pós-MVP | Operacional | ✅ Complete local; validações externas dependem de credenciais/ambiente alvo |
 
 Coverage: 88/88 requirements mapped.
 
@@ -125,6 +126,7 @@ Adicional pós-mock: a Phase 2 integrou cadastros/certificado/séries à API rea
 - [ ] Retomar pendências Phase 5: worker sem egress, XSD completo, materialized view, undo 24h e jobs de alertas/reconciliação.
 - [ ] Retomar pendências Phase 6: SSE por tenant, ZIP/XML/PDF em lote com e-mail, alertas persistentes/deduplicados e materialized views de KPIs.
 - [ ] Definir provedor transacional para convites, redefinição de senha e envio de documentos fiscais (`PEND-025`).
+- [ ] Definir se o próximo passo será piloto controlado ou ataque prévio às pendências críticas (`PEND-026`).
 
 ### Active Blockers
 
@@ -161,9 +163,17 @@ Nenhum.
 - Phase 6 executada e validada: shared/API/web typecheck, shared/API/web build. Rotas web novas no build: `/api/documentos`, `/api/documentos/export`, `/api/alertas`, `/api/alertas/[id]/resolver`, `/api/dashboard`.
 - Phase 7 executada e validada: shared build, API/web typecheck. Rotas web novas: `/api/configuracoes`, `/api/usuarios`, `/api/usuarios/[id]`, `/api/usuarios/[id]/acao`, `/api/auditoria`.
 
+### Last validation (2026-04-30)
+
+- Phase 8 operacional executada: `pnpm.cmd --filter @nexo/shared typecheck`, `pnpm.cmd --filter @nexo/api typecheck`, `pnpm.cmd --filter @nexo/web typecheck`, `pnpm.cmd --filter @nexo/api build`, `pnpm.cmd --filter @nexo/web build` e testes fiscais focados passaram.
+- Testes fiscais focados: `fiscal-gateway.spec.ts` e `fiscal-xml-signature.spec.ts` passaram com 6/6 testes.
+- `vercel.json` revisado: build de deploy configurado para `pnpm turbo run build --filter=@nexo/web` e install com `pnpm install --frozen-lockfile`.
+- Limites da validação: ambiente local está em Node v20.17.0 enquanto o projeto exige Node >=22; build web mantém warning conhecido de OpenTelemetry/Sentry; validação real de Vercel, variáveis de produção, migrations no banco alvo e AWS/S3/KMS exige credenciais e ambiente externo.
+- Nova pendência registrada: `PEND-026`, decisão entre piloto controlado e ataque prévio às pendências críticas.
+
 ### Next session
 
-- Planejar piloto controlado e validações de produção.
+- Resolver `PEND-026` e, conforme a decisão, planejar piloto controlado ou atacar primeiro as pendências P0/P1.
 
 ---
 

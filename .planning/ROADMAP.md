@@ -1,7 +1,7 @@
 # Nexo Fiscal — Roadmap
 
 **Version:** v1 (MVP)
-**Granularity:** standard (7 fases)
+**Granularity:** standard (7 fases) + Fase 8 operacional pós-MVP
 **Coverage:** 88/88 requisitos mapeados
 **Generated:** 2026-04-17 by gsd-roadmapper
 
@@ -17,6 +17,7 @@
 - [x] **Phase 5: Importação XML + Estoque** — Upload seguro de XML de compra, matching de produtos, event sourcing de movimentações e alertas de estoque
 - [x] **Phase 6: Documentos + Alertas + Dashboards (Diferencial)** — Consulta unificada, Central de Alertas e os três dashboards, incluindo a carteira consolidada da contabilidade
 - [x] **Phase 7: Configurações + Usuários + Hardening** — Configurações da empresa, gestão de usuários/perfis, auditoria na UI e hardening pré-GA
+- [x] **Phase 8: Validação Operacional Pós-MVP** — Validação local de build/typecheck/testes, revisão de deploy Vercel e registro de limites para go-live
 
 ---
 
@@ -164,6 +165,22 @@ Plans:
 **Delivered**: `07-01-SUMMARY.md` — contratos `admin`, rotas API/proxies Next, tela `/config`, gestão real de usuários/perfis e auditoria conectada ao `audit_log`.
 **Execution note**: por pedido, não foi feita priorização das pendências abertas das fases 3 a 6. A única pendência nova é `PEND-025` para provedor transacional de e-mail.
 
+### Phase 8: Validação Operacional Pós-MVP
+**Goal**: Validar o pacote técnico pós-MVP antes da decisão de go-live, separando o que passou localmente do que exige acesso a produção, banco alvo, Vercel/AWS e cliente piloto real.
+**Depends on**: Phase 7
+**Requirements**: Operacional pós-roadmap; sem novos requisitos funcionais.
+**Success Criteria** (o que deve ser VERDADE ao final):
+  1. Typecheck de `@nexo/shared`, `@nexo/api` e `@nexo/web` passa localmente.
+  2. Build de produção de `@nexo/api` e `@nexo/web` passa localmente, com rotas do MVP presentes.
+  3. Testes fiscais focados de gateway/XMLDSig passam, preservando a base crítica da emissão NF-e.
+  4. Deploy Vercel fica revisado por configuração local; validação real no dashboard/ambiente externo permanece condicionada a credenciais.
+  5. A decisão entre piloto controlado e ataque prévio às pendências críticas fica registrada em pendências.
+**Plans**: 1 validação operacional — concluída em 2026-04-30
+**UI hint**: no
+**Research flag**: no
+**Delivered**: `08-01-SUMMARY.md` — validações locais, limites de ambiente externo e `PEND-026` para decisão de go/no-go.
+**Execution note**: a Fase 8 não adiciona nova funcionalidade; ela fecha o ciclo técnico com evidência operacional e prepara a próxima decisão.
+
 ---
 
 ## Progress Table
@@ -178,6 +195,7 @@ Plans:
 | 5. Importação XML + Estoque | 1/1 | Complete técnico/base; jobs e undo pendentes | 2026-04-29 |
 | 6. Documentos + Alertas + Dashboards (Diferencial) | 1/1 | Complete técnico/base; SSE, ZIP/e-mail e materialized views pendentes | 2026-04-29 |
 | 7. Configurações + Usuários + Hardening | 1/1 | Complete técnico/base; provedor transacional de e-mail pendente | 2026-04-29 |
+| 8. Validação Operacional Pós-MVP | 1/1 | Complete local; validações externas dependem de credenciais/ambiente alvo | 2026-04-30 |
 
 ---
 
@@ -201,4 +219,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-04-29 by Codex execution (Phase 7 base completed; MVP roadmap complete)*
+*Last updated: 2026-04-30 by Codex execution (Phase 8 operational validation completed; go/no-go decision moved to pendências)*
