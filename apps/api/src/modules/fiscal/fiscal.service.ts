@@ -17,6 +17,7 @@ import { getCurrentTenant } from '../../db/tenant-context';
 import { FiscalEmissionService } from './fiscal-emission.service';
 import { FISCAL_GATEWAY, type FiscalGateway } from './fiscal.gateway';
 import { FiscalQueueService } from './fiscal-queue.service';
+import { renderDanfePdfFromXml } from './danfe-pdf.renderer';
 import { S3Service } from '../storage/s3.service';
 
 type NotaFiscalRow = Prisma.NotaFiscalGetPayload<{ include: { eventos: true } }>;
@@ -292,7 +293,8 @@ export class FiscalService {
         { status: row.status },
       );
     }
-    const pdf = this.simpleDanfePdf(row);
+    const xml = await this.authorizedXmlForRow(row);
+    const pdf = renderDanfePdfFromXml(row, xml);
     return {
       filename: `${this.documentPdfPrefix(row.modelo)}-${row.chaveAcesso ?? row.id}.pdf`,
       contentBase64: pdf.toString('base64'),
@@ -493,40 +495,25 @@ export class FiscalService {
     return 'DANFE';
   }
 
-  private simpleDanfePdf(row: Prisma.NotaFiscalGetPayload<true>): Buffer {
-    const title =
-      row.modelo === 'NFSE'
-        ? 'DANFSE - Documento Auxiliar da NFS-e'
-        : row.modelo === 'DEVOLUCAO'
-          ? 'Documento Auxiliar da NF-e de Devolucao'
-          : 'DANFE - Documento Auxiliar da NF-e';
-    const lines = [
-      '%PDF-1.4',
-      '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
-      '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
-      '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj',
-      '5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
-    ];
-    const text = [
-      title,
-      `Modelo: ${row.modelo}  Serie: ${row.serie}  Numero: ${row.numero?.toString() ?? '-'}`,
-      `Status: ${row.status}`,
-      `Chave: ${row.chaveAcesso ?? '-'}`,
-      `Protocolo: ${row.protocoloAutorizacao ?? '-'}`,
-      'Representacao visual gerada a partir dos dados fiscais persistidos.',
-    ];
-    const stream = `BT /F1 14 Tf 40 790 Td ${text
-      .map((line, index) => `${index === 0 ? '' : '0 -24 Td '}(${line.replace(/[()]/g, '')}) Tj`)
-      .join(' ')} ET`;
-    lines.push(`4 0 obj << /Length ${Buffer.byteLength(stream)} >> stream`);
-    lines.push(stream);
-    lines.push('endstream endobj');
-    lines.push('xref 0 6');
-    lines.push('0000000000 65535 f ');
-    lines.push('trailer << /Root 1 0 R /Size 6 >>');
-    lines.push('startxref');
-    lines.push('0');
-    lines.push('%%EOF');
-    return Buffer.from(lines.join('\n'), 'latin1');
+  private async authorizedXmlForRow(row: Prisma.NotaFiscalGetPayload<true>): Promise<string> {
+    let content: string | null = null;
+    if (row.xmlAutorizadoS3Key) {
+      try {
+        content = (await this.s3.downloadFiscalDocument(row.tenantId, row.xmlAutorizadoS3Key)).toString(
+          'utf8',
+        );
+      } catch {
+        content = null;
+      }
+    }
+    content ??= this.xmlFromPayload(row.payload);
+    if (!content) {
+      throw new BusinessException(
+        'FISCAL_XML_NOT_AVAILABLE',
+        'DANFE requer XML autorizado do documento fiscal.',
+        404,
+      );
+    }
+    return content;
   }
 }

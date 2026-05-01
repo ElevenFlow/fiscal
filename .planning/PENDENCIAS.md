@@ -23,10 +23,10 @@ Prioridade sugerida:
 
 | ID | Origem | Pendência | Motivo do adiamento | Retomar em | Prioridade | Status |
 |---|---|---|---|---|---|---|
-| PEND-001 | Phase 3 / 03-01 | Aplicar e validar migration `20260427030000_phase3_nfe_foundation` no banco alvo | A migration foi criada, mas a aplicação local falhou por resolução de env no PowerShell (`$DATABASE_ADMIN_URL` vazio) | Antes da homologação SEFAZ-SC real | P1 | Aberta |
+| PEND-001 | Phase 3 / 03-01 | Aplicar e validar migration `20260427030000_phase3_nfe_foundation` no banco alvo | Migration aplicada e validada no banco alvo local `nexofiscal_dev`; `_prisma_migrations` confirma aplicação e RLS forçado em `notas_fiscais`/`nota_fiscal_eventos` | Antes da homologação SEFAZ-SC real | P1 | Resolvida |
 | PEND-002 | Phase 3 / 03-02..03-04 | Executar homologação real SEFAZ-SC/SVRS com certificado A1 ativo | Não havia certificado A1/senha/material mTLS de tenant disponível no runtime | Antes de liberar NF-e para uso real | P0 | Aberta |
 | PEND-003 | Phase 3 / 03-03 | Definir entrega segura da senha/material PFX ao worker fiscal em memória | O fluxo atual não persiste senha do PFX; gateway falha fechado com `SEFAZ_SC_CERT_REQUIRED` sem material mTLS | Antes da homologação SEFAZ-SC real | P0 | Aberta |
-| PEND-004 | Phase 3 / 03-04 | Substituir DANFE PDF mínimo por DANFE completo baseado no XML autorizado | Entregue representação simples para fechar fluxo técnico; layout fiscal completo ficou fora do escopo da base | Antes de produção | P1 | Aberta |
+| PEND-004 | Phase 3 / 03-04 | Substituir DANFE PDF mínimo por DANFE completo baseado no XML autorizado | DANFE substituído por renderer A4 que extrai dados do XML autorizado: chave, protocolo, emitente, destinatário, impostos, transporte e itens | Antes de produção | P1 | Resolvida |
 | PEND-005 | Phase 3 / 03-04 | Validar armazenamento de XML autorizado em S3 Object Lock com bucket real | Código possui caminho S3/fallback, mas validação real depende de infra/env AWS | Antes de produção | P1 | Aberta |
 | PEND-006 | Phase 3 | Teste E2E operacional com emissão, download XML/DANFE e cancelamento usando dados reais de homologação | Sem credenciais/certificado/ambiente completo no momento da implementação | Homologação fiscal | P1 | Aberta |
 | PEND-007 | Phase 2 / 02-08 | Permitir writes do worker mensal de lookup em produção via `DATABASE_ADMIN_URL` ou contexto admin seguro | Tabelas públicas de lookup tiveram writes revogados para `app_user`; worker precisa estratégia de privilégio controlado | Phase 7 hardening | P2 | Aberta |
@@ -37,7 +37,7 @@ Prioridade sugerida:
 | PEND-012 | Phase 02.1 / Auth | Endurecer RLS da tabela `sessions` para restringir acesso ao próprio `user_id` | Policy permissiva foi aceita durante fundação auth para acelerar implementação | Phase 7.1 / hardening auth | P1 | Aberta |
 | PEND-013 | Phase 4 / NFS-e | Implementar integrações municipais reais de NFS-e em Santa Catarina | Decisão atual: não integrar nenhuma prefeitura agora; a integração será definida pelo primeiro cliente real em SC, município, credenciais e ambiente dele | Pós-primeiro cliente NFS-e em SC | P1 | Aberta |
 | PEND-014 | Phase 4 / NFS-e | Pesquisar/adaptar o padrão NFS-e do município catarinense do primeiro cliente | A Fase 4 terá base operacional sem transmissão; o adapter municipal específico de SC só deve ser feito por demanda concreta | Pós-primeiro cliente SC | P2 | Aberta |
-| PEND-015 | Phase 5 / Estoque | Aplicar e validar migration `20260429050000_phase5_xml_estoque` no banco alvo | Migration foi criada e buildada, mas não foi aplicada contra banco real nesta execução local | Antes de beta operacional de estoque | P1 | Aberta |
+| PEND-015 | Phase 5 / Estoque | Aplicar e validar migration `20260429050000_phase5_xml_estoque` no banco alvo | Migration aplicada e validada no banco alvo local `nexofiscal_dev`; `_prisma_migrations` confirma aplicação e RLS forçado em `xml_importacoes`/`movimentacoes_estoque` | Antes de beta operacional de estoque | P1 | Resolvida |
 | PEND-016 | Phase 5 / XML | Executar parser de XML em worker isolado sem egress | A base atual parseia de forma segura na API; isolamento de rede do worker depende de infraestrutura/runtime dedicado | Antes de alto volume de importação XML | P1 | Aberta |
 | PEND-017 | Phase 5 / XML | Validar XML de compra contra XSD NF-e completo | A Fase 5 implementou validação estrutural e bloqueio XXE; validação XSD completa ficou para hardening fiscal | Antes de produção | P1 | Aberta |
 | PEND-018 | Phase 5 / Estoque | Criar view materializada de saldo atual e rotina de refresh | Saldo atual está calculado por groupBy de movimentações; materialized view será necessária para volume e dashboards | Phase 6 dashboards ou hardening estoque | P2 | Aberta |
@@ -61,4 +61,6 @@ Itens que devem ser decididos antes do próximo ciclo de execução:
 
 ## Itens Resolvidos
 
-Nenhum ainda neste registro central.
+- `PEND-004` — DANFE mínimo substituído por PDF gerado a partir do XML autorizado, com teste `danfe-pdf.renderer.spec.ts` e validação fiscal focada em 2026-05-01.
+- `PEND-001` — migration Phase 3 `20260427030000_phase3_nfe_foundation` aplicada e validada no banco alvo local em 2026-05-01.
+- `PEND-015` — migration Phase 5 `20260429050000_phase5_xml_estoque` aplicada e validada no banco alvo local em 2026-05-01.

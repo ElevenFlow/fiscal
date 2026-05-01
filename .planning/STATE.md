@@ -118,11 +118,11 @@ Adicional pós-mock: a Phase 2 integrou cadastros/certificado/séries à API rea
 
 ### Open Todos
 
-- [ ] Aplicar/confirmar migrations Phase 3 no banco alvo e validar RLS de `nota_fiscal`/eventos em banco real.
+- [x] Aplicar/confirmar migrations Phase 3 no banco alvo e validar RLS de `nota_fiscal`/eventos em banco real (`PEND-001` resolvida em 2026-05-01).
 - [ ] Executar homologação real SEFAZ-SC/SVRS com certificado A1 ativo e material mTLS entregue ao worker de forma segura.
-- [ ] Evoluir DANFE mínimo para layout DANFE completo antes de produção.
+- [x] Evoluir DANFE mínimo para layout DANFE completo antes de produção (`PEND-004` resolvida em 2026-05-01).
 - [ ] Integração municipal real NFS-e SC apenas após primeiro cliente/município concreto (`PEND-013`, `PEND-014`).
-- [ ] Aplicar/confirmar migrations Phase 5 no banco alvo e validar RLS de `xml_importacoes`/`movimentacoes_estoque`.
+- [x] Aplicar/confirmar migrations Phase 5 no banco alvo e validar RLS de `xml_importacoes`/`movimentacoes_estoque` (`PEND-015` resolvida em 2026-05-01).
 - [ ] Retomar pendências Phase 5: worker sem egress, XSD completo, materialized view, undo 24h e jobs de alertas/reconciliação.
 - [ ] Retomar pendências Phase 6: SSE por tenant, ZIP/XML/PDF em lote com e-mail, alertas persistentes/deduplicados e materialized views de KPIs.
 - [ ] Definir provedor transacional para convites, redefinição de senha e envio de documentos fiscais (`PEND-025`).
