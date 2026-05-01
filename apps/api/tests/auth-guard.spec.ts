@@ -53,6 +53,24 @@ describe('AuthGuard', () => {
     expect(req.auth?.role).toBe('tenant_user');
   });
 
+  it('JWT válido em Authorization Bearer → req.auth populado', async () => {
+    const { guard, jwt } = await makeGuard();
+    const token = await jwt.signAccess({
+      userId: 'u-bearer',
+      contabilidadeId: 'cont-1',
+      role: 'tenant_user',
+    });
+    const req: any = { cookies: {}, headers: { authorization: `Bearer ${token}` } };
+    const ctx = makeCtx(req);
+
+    expect(await guard.canActivate(ctx)).toBe(true);
+    expect(req.auth).toMatchObject({
+      userId: 'u-bearer',
+      contabilidadeId: 'cont-1',
+      role: 'tenant_user',
+    });
+  });
+
   it('cookie nf_access ausente → UnauthorizedException', async () => {
     const { guard } = await makeGuard();
     const ctx = makeCtx({ cookies: {}, headers: {} });
