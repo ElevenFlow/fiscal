@@ -1,0 +1,1481 @@
+{
+  "source": "https://legislacao.sef.sc.gov.br/legtrib_internet/html/regulamentos/icms/ricms_01_01_a.htm",
+  "sourceTitle": "RICMS/SC-01, Anexo 1-A - Bens e mercadorias sujeitos ao regime de substituicao tributaria",
+  "generatedAt": "2026-05-02T18:48:33.901Z",
+  "uf": "SC",
+  "entries": [
+    {
+      "cest": "0200100",
+      "ncmPatterns": [
+        "2205",
+        "22089000"
+      ],
+      "ncmRaw": "2205 2208.90.00",
+      "descricao": "Aperitivos, amargos, bitter e similares"
+    },
+    {
+      "cest": "0200200",
+      "ncmPatterns": [
+        "22089000"
+      ],
+      "ncmRaw": "2208.90.00",
+      "descricao": "Batida e similares"
+    },
+    {
+      "cest": "0200300",
+      "ncmPatterns": [
+        "22089000"
+      ],
+      "ncmRaw": "2208.90.00",
+      "descricao": "Bebida ice"
+    },
+    {
+      "cest": "0200400",
+      "ncmPatterns": [
+        "220720",
+        "22084000"
+      ],
+      "ncmRaw": "2207.20 2208.40.00",
+      "descricao": "Cachaça e aguardentes"
+    },
+    {
+      "cest": "0200500",
+      "ncmPatterns": [
+        "2205",
+        "22060090",
+        "22089000"
+      ],
+      "ncmRaw": "2205 2206.00.90 2208.90.00",
+      "descricao": "Catuaba e similares"
+    },
+    {
+      "cest": "0200600",
+      "ncmPatterns": [
+        "22082000"
+      ],
+      "ncmRaw": "2208.20.00",
+      "descricao": "Conhaque, brandy e similares"
+    },
+    {
+      "cest": "0200700",
+      "ncmPatterns": [
+        "22060090",
+        "22089000"
+      ],
+      "ncmRaw": "2206.00.90 2208.90.00",
+      "descricao": "Cooler"
+    },
+    {
+      "cest": "0200800",
+      "ncmPatterns": [
+        "22085000"
+      ],
+      "ncmRaw": "2208.50.00",
+      "descricao": "Gim (gin) e genebra"
+    },
+    {
+      "cest": "0200900",
+      "ncmPatterns": [
+        "2205",
+        "22060090",
+        "22089000"
+      ],
+      "ncmRaw": "2205 2206.00.90 2208.90.00",
+      "descricao": "Jurubeba e similares"
+    },
+    {
+      "cest": "0201000",
+      "ncmPatterns": [
+        "22087000"
+      ],
+      "ncmRaw": "2208.70.00",
+      "descricao": "Licores e similares"
+    },
+    {
+      "cest": "0201100",
+      "ncmPatterns": [
+        "22082000"
+      ],
+      "ncmRaw": "2208.20.00",
+      "descricao": "Pisco"
+    },
+    {
+      "cest": "0201200",
+      "ncmPatterns": [
+        "22084000"
+      ],
+      "ncmRaw": "2208.40.00",
+      "descricao": "Rum"
+    },
+    {
+      "cest": "0201300",
+      "ncmPatterns": [
+        "22060090"
+      ],
+      "ncmRaw": "2206.00.90",
+      "descricao": "Saquê"
+    },
+    {
+      "cest": "0201400",
+      "ncmPatterns": [
+        "22089000"
+      ],
+      "ncmRaw": "2208.90.00",
+      "descricao": "Steinhaeger"
+    },
+    {
+      "cest": "0201500",
+      "ncmPatterns": [
+        "22089000"
+      ],
+      "ncmRaw": "2208.90.00",
+      "descricao": "Tequila"
+    },
+    {
+      "cest": "0201600",
+      "ncmPatterns": [
+        "220830"
+      ],
+      "ncmRaw": "2208.30",
+      "descricao": "Uísque"
+    },
+    {
+      "cest": "0201700",
+      "ncmPatterns": [
+        "2205"
+      ],
+      "ncmRaw": "2205",
+      "descricao": "Vermute e similares"
+    },
+    {
+      "cest": "0201800",
+      "ncmPatterns": [
+        "22086000"
+      ],
+      "ncmRaw": "2208.60.00",
+      "descricao": "Vodka"
+    },
+    {
+      "cest": "0201900",
+      "ncmPatterns": [
+        "22089000"
+      ],
+      "ncmRaw": "2208.90.00",
+      "descricao": "Derivados de vodka"
+    },
+    {
+      "cest": "0202000",
+      "ncmPatterns": [
+        "22089000"
+      ],
+      "ncmRaw": "2208.90.00",
+      "descricao": "Arak"
+    },
+    {
+      "cest": "0202100",
+      "ncmPatterns": [
+        "22082000"
+      ],
+      "ncmRaw": "2208.20.00",
+      "descricao": "Aguardente vínica / grappa"
+    },
+    {
+      "cest": "0202200",
+      "ncmPatterns": [
+        "22060010"
+      ],
+      "ncmRaw": "2206.00.10",
+      "descricao": "Sidra e similares"
+    },
+    {
+      "cest": "0202300",
+      "ncmPatterns": [
+        "2205",
+        "22060090",
+        "22089000"
+      ],
+      "ncmRaw": "2205 2206.00.90 2208.90.00",
+      "descricao": "Sangrias e coquetéis"
+    },
+    {
+      "cest": "0299900",
+      "ncmPatterns": [
+        "2205",
+        "2206",
+        "2207",
+        "2208"
+      ],
+      "ncmRaw": "2205 2206 2207 2208",
+      "descricao": "Outras bebidas alcoólicas não especificadas nos itens anteriores"
+    },
+    {
+      "cest": "0300700",
+      "ncmPatterns": [
+        "22021000"
+      ],
+      "ncmRaw": "2202.10.00",
+      "descricao": "Água aromatizada artificialmente, exceto os refrescos e refrigerantes"
+    },
+    {
+      "cest": "0300800",
+      "ncmPatterns": [
+        "22029900"
+      ],
+      "ncmRaw": "2202.99.00",
+      "descricao": "Outras águas minerais, gasosa ou não, ou potável, naturais, inclusive gaseificadas ou aromatizadas artificialmente, exceto os refrescos e refrigerantes"
+    },
+    {
+      "cest": "0301000",
+      "ncmPatterns": [
+        "22021000",
+        "22029900"
+      ],
+      "ncmRaw": "2202.10.00 2202.99.00",
+      "descricao": "Refrigerante em vidro descartável"
+    },
+    {
+      "cest": "0301001",
+      "ncmPatterns": [
+        "22021000",
+        "22029900"
+      ],
+      "ncmRaw": "2202.10.00 2202.99.00",
+      "descricao": "Refrigerante em embalagem PET"
+    },
+    {
+      "cest": "0301002",
+      "ncmPatterns": [
+        "22021000",
+        "22029900"
+      ],
+      "ncmRaw": "2202.10.00 2202.99.00",
+      "descricao": "Refrigerante em embalagem PET"
+    },
+    {
+      "cest": "0301002",
+      "ncmPatterns": [
+        "22021000",
+        "22029900"
+      ],
+      "ncmRaw": "2202.10.00 2202.99.00",
+      "descricao": "Refrigerante em lata"
+    },
+    {
+      "cest": "0301100",
+      "ncmPatterns": [
+        "22021000",
+        "22029900"
+      ],
+      "ncmRaw": "2202.10.00 2202.99.00",
+      "descricao": "Demais refrigerantes, exceto os classificados nos CEST 03.010.00, 03.010.01, 03.010.02 e 03.011.01"
+    },
+    {
+      "cest": "0301101",
+      "ncmPatterns": [
+        "2202"
+      ],
+      "ncmRaw": "2202",
+      "descricao": "Espumantes sem álcool"
+    },
+    {
+      "cest": "0301200",
+      "ncmPatterns": [
+        "21069010"
+      ],
+      "ncmRaw": "2106.90.10",
+      "descricao": "Xarope ou extrato concentrado destinados ao preparo de refrigerante em máquina “pré-mix” ou “post-mix”, exceto o classificado no CEST 03.012.01"
+    },
+    {
+      "cest": "0301200",
+      "ncmPatterns": [
+        "21069010"
+      ],
+      "ncmRaw": "2106.90.10",
+      "descricao": "Xarope ou extrato concentrado destinados ao preparo de refrigerante em máquina “pré-mix” ou “post-mix”"
+    },
+    {
+      "cest": "0301201",
+      "ncmPatterns": [
+        "21069010"
+      ],
+      "ncmRaw": "2106.90.10",
+      "descricao": "Cápsula de refrigerante"
+    },
+    {
+      "cest": "0301300",
+      "ncmPatterns": [
+        "210690",
+        "22029900"
+      ],
+      "ncmRaw": "2106.90 2202.99.00",
+      "descricao": "Bebidas energéticas em lata"
+    },
+    {
+      "cest": "0301301",
+      "ncmPatterns": [
+        "210690",
+        "22029900"
+      ],
+      "ncmRaw": "2106.90 2202.99.00",
+      "descricao": "Bebidas energéticas em embalagem PET"
+    },
+    {
+      "cest": "0301302",
+      "ncmPatterns": [
+        "210690",
+        "22029900"
+      ],
+      "ncmRaw": "2106.90 2202.99.00",
+      "descricao": "Bebidas energéticas em vidro"
+    },
+    {
+      "cest": "0301500",
+      "ncmPatterns": [
+        "210690",
+        "22029900"
+      ],
+      "ncmRaw": "2106.90 2202.99.00",
+      "descricao": "Bebidas hidroeletrolíticas"
+    },
+    {
+      "cest": "0302100",
+      "ncmPatterns": [
+        "22030000"
+      ],
+      "ncmRaw": "2203.00.00",
+      "descricao": "Cerveja em garrafa de vidro retornável"
+    },
+    {
+      "cest": "0302101",
+      "ncmPatterns": [
+        "22030000"
+      ],
+      "ncmRaw": "2203.00.00",
+      "descricao": "Cerveja em garrafa de vidro descartável"
+    },
+    {
+      "cest": "0302102",
+      "ncmPatterns": [
+        "22030000"
+      ],
+      "ncmRaw": "2203.00.00",
+      "descricao": "Cerveja em garrafa de alumínio"
+    },
+    {
+      "cest": "0302103",
+      "ncmPatterns": [
+        "22030000"
+      ],
+      "ncmRaw": "2203.00.00",
+      "descricao": "Cerveja em lata"
+    },
+    {
+      "cest": "0302104",
+      "ncmPatterns": [
+        "22030000"
+      ],
+      "ncmRaw": "2203.00.00",
+      "descricao": "Cerveja em barril"
+    },
+    {
+      "cest": "0302105",
+      "ncmPatterns": [
+        "22030000"
+      ],
+      "ncmRaw": "2203.00.00",
+      "descricao": "Cerveja em embalagem PET"
+    },
+    {
+      "cest": "0302106",
+      "ncmPatterns": [
+        "22030000"
+      ],
+      "ncmRaw": "2203.00.00",
+      "descricao": "Cerveja em outras embalagens"
+    },
+    {
+      "cest": "0302200",
+      "ncmPatterns": [
+        "22029100"
+      ],
+      "ncmRaw": "2202.91.00",
+      "descricao": "Cerveja sem álcool em garrafa de vidro retornável"
+    },
+    {
+      "cest": "0302201",
+      "ncmPatterns": [
+        "22029100"
+      ],
+      "ncmRaw": "2202.91.00",
+      "descricao": "Cerveja sem álcool em garrafa de vidro descartável"
+    },
+    {
+      "cest": "0302202",
+      "ncmPatterns": [
+        "22029100"
+      ],
+      "ncmRaw": "2202.91.00",
+      "descricao": "Cerveja sem álcool em garrafa de alumínio"
+    },
+    {
+      "cest": "0302203",
+      "ncmPatterns": [
+        "22029100"
+      ],
+      "ncmRaw": "2202.91.00",
+      "descricao": "Cerveja sem álcool em lata"
+    },
+    {
+      "cest": "0302204",
+      "ncmPatterns": [
+        "22029100"
+      ],
+      "ncmRaw": "2202.91.00",
+      "descricao": "Cerveja sem álcool em barril"
+    },
+    {
+      "cest": "0302205",
+      "ncmPatterns": [
+        "22029100"
+      ],
+      "ncmRaw": "2202.91.00",
+      "descricao": "Cerveja sem álcool em embalagem PET"
+    },
+    {
+      "cest": "0302206",
+      "ncmPatterns": [
+        "22029100"
+      ],
+      "ncmRaw": "2202.91.00",
+      "descricao": "Cerveja sem álcool em outras embalagens"
+    },
+    {
+      "cest": "0302300",
+      "ncmPatterns": [
+        "22030000"
+      ],
+      "ncmRaw": "2203.00.00",
+      "descricao": "Chope"
+    },
+    {
+      "cest": "0400100",
+      "ncmPatterns": [
+        "2402"
+      ],
+      "ncmRaw": "2402",
+      "descricao": "Charutos, cigarrilhas e cigarros, de tabaco ou dos seus sucedâneos"
+    },
+    {
+      "cest": "0400200",
+      "ncmPatterns": [
+        "2403"
+      ],
+      "ncmRaw": "2403.1",
+      "descricao": "Tabaco para fumar, mesmo contendo sucedâneos de tabaco em qualquer proporção"
+    },
+    {
+      "cest": "0500100",
+      "ncmPatterns": [
+        "2523"
+      ],
+      "ncmRaw": "2523",
+      "descricao": "Cimento"
+    },
+    {
+      "cest": "0600101",
+      "ncmPatterns": [
+        "22071090"
+      ],
+      "ncmRaw": "2207.10.90",
+      "descricao": "Álcool etílico não desnaturado, com um teor alcoólico em volume igual ou superior a 80% vol - Outros (álcool etílico hidratado combustível)"
+    },
+    {
+      "cest": "0600300",
+      "ncmPatterns": [
+        "27101251"
+      ],
+      "ncmRaw": "2710.12.51",
+      "descricao": "Gasolina de aviação"
+    },
+    {
+      "cest": "0600400",
+      "ncmPatterns": [
+        "27101919"
+      ],
+      "ncmRaw": "2710.19.19",
+      "descricao": "Querosenes, exceto de aviação"
+    },
+    {
+      "cest": "0600500",
+      "ncmPatterns": [
+        "27101911"
+      ],
+      "ncmRaw": "2710.19.11",
+      "descricao": "Querosene de aviação"
+    },
+    {
+      "cest": "0600611",
+      "ncmPatterns": [
+        "27101922"
+      ],
+      "ncmRaw": "2710.19.22",
+      "descricao": "Óleo combustível pesado"
+    },
+    {
+      "cest": "0600700",
+      "ncmPatterns": [
+        "271019"
+      ],
+      "ncmRaw": "2710.19.3",
+      "descricao": "Óleos lubrificantes"
+    },
+    {
+      "cest": "0600800",
+      "ncmPatterns": [
+        "271019"
+      ],
+      "ncmRaw": "2710.19.9",
+      "descricao": "Outros óleos de petróleo ou de minerais betuminosos (exceto óleos brutos) e preparações não especificadas nem compreendidas noutras posições, que contenham, como constituintes básicos, 70% ou mais, em peso, de óleos de petróleo ou de minerais betuminosos, exceto os que contenham biodiesel, exceto os resíduos de óleos e exceto as graxas lubrificantes"
+    },
+    {
+      "cest": "0600801",
+      "ncmPatterns": [
+        "271019"
+      ],
+      "ncmRaw": "2710.19.9",
+      "descricao": "Graxa lubrificante"
+    },
+    {
+      "cest": "0600900",
+      "ncmPatterns": [
+        "2710"
+      ],
+      "ncmRaw": "2710.9",
+      "descricao": "Resíduos de óleos"
+    },
+    {
+      "cest": "0601000",
+      "ncmPatterns": [
+        "2711"
+      ],
+      "ncmRaw": "2711",
+      "descricao": "Gás de petróleo e outros hidrocarbonetos gasosos, exceto GLP, GLGN, Gás Natural e Gás de xisto."
+    },
+    {
+      "cest": "0601200",
+      "ncmPatterns": [
+        "27111100"
+      ],
+      "ncmRaw": "2711.11.00",
+      "descricao": "Gás Natural Liquefeito"
+    },
+    {
+      "cest": "0601300",
+      "ncmPatterns": [
+        "27112100"
+      ],
+      "ncmRaw": "2711.21.00",
+      "descricao": "Gás Natural Gasoso"
+    },
+    {
+      "cest": "0601400",
+      "ncmPatterns": [
+        "27112990"
+      ],
+      "ncmRaw": "2711.29.90",
+      "descricao": "Gás de xisto"
+    },
+    {
+      "cest": "0601500",
+      "ncmPatterns": [
+        "2713"
+      ],
+      "ncmRaw": "2713",
+      "descricao": "Coque de petróleo e outros resíduos de óleo de petróleo ou de minerais betuminosos"
+    },
+    {
+      "cest": "0601700",
+      "ncmPatterns": [
+        "3403"
+      ],
+      "ncmRaw": "3403",
+      "descricao": "Preparações lubrificantes, exceto as contendo, como constituintes de base, 70% ou mais, em peso, de óleos de petróleo ou de minerais betuminosos"
+    },
+    {
+      "cest": "0601800",
+      "ncmPatterns": [
+        "27102000"
+      ],
+      "ncmRaw": "2710.20.00",
+      "descricao": "Óleos de petróleo ou de minerais betuminosos (exceto óleos brutos) e preparações não especificadas nem compreendidas noutras posições, que contenham, como constituintes básicos, 70% ou mais, em peso, de óleos de petróleo ou de minerais betuminosos, que contenham biodiesel, exceto os resíduos de óleos"
+    },
+    {
+      "cest": "0601900",
+      "ncmPatterns": [
+        "27101249"
+      ],
+      "ncmRaw": "2710.12.49",
+      "descricao": "Nafta não petroquímica"
+    },
+    {
+      "cest": "0700100",
+      "ncmPatterns": [
+        "27160000"
+      ],
+      "ncmRaw": "2716.00.00",
+      "descricao": "Energia elétrica"
+    },
+    {
+      "cest": "1003000",
+      "ncmPatterns": [
+        "6907"
+      ],
+      "ncmRaw": "6907",
+      "descricao": "Ladrilhos e placas de cerâmica, exclusivamente para pavimentação ou revestimento"
+    },
+    {
+      "cest": "1003001",
+      "ncmPatterns": [
+        "6907"
+      ],
+      "ncmRaw": "6907",
+      "descricao": "Cubos, pastilhas e artigos semelhantes de cerâmica, mesmo com suporte, exceto os descritos CEST 10.030.00"
+    },
+    {
+      "cest": "1003100",
+      "ncmPatterns": [
+        "6910"
+      ],
+      "ncmRaw": "6910",
+      "descricao": "Pias, lavatórios, colunas para lavatórios, banheiras, bidês, sanitários, caixas de descarga, mictórios e aparelhos fixos semelhantes para usos sanitários, de cerâmica"
+    },
+    {
+      "cest": "1600100",
+      "ncmPatterns": [
+        "40111000"
+      ],
+      "ncmRaw": "4011.10.00",
+      "descricao": "Pneus novos, dos tipos utilizados em automóveis de passageiros (incluídos os veículos de uso misto - camionetas e os automóveis de corrida)"
+    },
+    {
+      "cest": "1600200",
+      "ncmPatterns": [
+        "4011"
+      ],
+      "ncmRaw": "4011",
+      "descricao": "Pneus novos, dos tipos utilizados em caminhões (inclusive para os fora-de-estrada), ônibus, aviões, máquinas de terraplenagem, de construção e conservação de estradas, máquinas e tratores agrícolas, pá-carregadeira"
+    },
+    {
+      "cest": "1600300",
+      "ncmPatterns": [
+        "40114000"
+      ],
+      "ncmRaw": "4011.40.00",
+      "descricao": "Pneus novos para motocicletas"
+    },
+    {
+      "cest": "1600400",
+      "ncmPatterns": [
+        "4011"
+      ],
+      "ncmRaw": "4011",
+      "descricao": "Outros tipos de pneus novos, exceto os itens classificados nos CEST 16.005.00"
+    },
+    {
+      "cest": "1600500",
+      "ncmPatterns": [
+        "40115000"
+      ],
+      "ncmRaw": "4011.50.00",
+      "descricao": "Pneus novos de borracha dos tipos utilizados em bicicletas"
+    },
+    {
+      "cest": "1600700",
+      "ncmPatterns": [
+        "401290"
+      ],
+      "ncmRaw": "4012.90",
+      "descricao": "Protetores de borracha, exceto os itens classificados nos CEST 16.007.01"
+    },
+    {
+      "cest": "1600701",
+      "ncmPatterns": [
+        "401290"
+      ],
+      "ncmRaw": "4012.90",
+      "descricao": "Protetores de borracha para bicicletas"
+    },
+    {
+      "cest": "1600800",
+      "ncmPatterns": [
+        "4013"
+      ],
+      "ncmRaw": "4013",
+      "descricao": "Câmaras de ar de borracha, exceto os itens classificados nos CEST 16.009.00"
+    },
+    {
+      "cest": "1600900",
+      "ncmPatterns": [
+        "40132000"
+      ],
+      "ncmRaw": "4013.20.00",
+      "descricao": "Câmaras de ar de borracha dos tipos utilizados em bicicletas"
+    },
+    {
+      "cest": "2500100",
+      "ncmPatterns": [
+        "87021000"
+      ],
+      "ncmRaw": "8702.10.00",
+      "descricao": "Veículos automóveis para transporte de 10 pessoas ou mais, incluindo o motorista, unicamente com motor de pistão, de ignição por compressão (diesel ou semidiesel), com volume interno de habitáculo, destinado a passageiros e motorista, superior a 6 m³, mas inferior a 9 m³"
+    },
+    {
+      "cest": "2500200",
+      "ncmPatterns": [
+        "87024090"
+      ],
+      "ncmRaw": "8702.40.90",
+      "descricao": "Veículos automóveis para transporte de 10 pessoas ou mais, incluindo o motorista, unicamente com motor elétrico para propulsão, com volume interno de habitáculo, destinado a passageiros e motorista, superior a 6 m³, mas inferior a 9 m³"
+    },
+    {
+      "cest": "2500300",
+      "ncmPatterns": [
+        "87032100"
+      ],
+      "ncmRaw": "8703.21.00",
+      "descricao": "Automóveis unicamente com motor de pistão alternativo de ignição por centelha (faísca*), de cilindrada não superior a 1000 cm³"
+    },
+    {
+      "cest": "2500400",
+      "ncmPatterns": [
+        "87032210"
+      ],
+      "ncmRaw": "8703.22.10",
+      "descricao": "Automóveis unicamente com motor de pistão alternativo de ignição por centelha (faísca*), de cilindrada superior a 1000 cm³, mas não superior a 1500 cm³, com capacidade de transporte de pessoas sentadas inferior ou igual a 6, incluído o condutor, exceto carro celular"
+    },
+    {
+      "cest": "2500500",
+      "ncmPatterns": [
+        "87032290"
+      ],
+      "ncmRaw": "8703.22.90",
+      "descricao": "Outros automóveis unicamente com motor de pistão alternativo de ignição por centelha (faísca*), de cilindrada superior a 1000 cm³, mas não superior a 1500 cm³, exceto carro celular"
+    },
+    {
+      "cest": "2500600",
+      "ncmPatterns": [
+        "87032310"
+      ],
+      "ncmRaw": "8703.23.10",
+      "descricao": "Automóveis unicamente com motor de pistão alternativo de ignição por centelha (faísca*), de cilindrada superior a 1500 cm³, mas não superior a 3000 cm³, com capacidade de transporte de pessoas sentadas inferior ou igual a 6, incluído o condutor, exceto carro celular, carro funerário e automóveis de corrida"
+    },
+    {
+      "cest": "2500700",
+      "ncmPatterns": [
+        "87032390"
+      ],
+      "ncmRaw": "8703.23.90",
+      "descricao": "Outros automóveis unicamente com motor de pistão alternativo de ignição por centelha (faísca*), de cilindrada superior a 1500 cm³, mas não superior a 3000 cm³, exceto carro celular, carro funerário e automóveis de corrida"
+    },
+    {
+      "cest": "2500800",
+      "ncmPatterns": [
+        "87032410"
+      ],
+      "ncmRaw": "8703.24.10",
+      "descricao": "Automóveis unicamente com motor de pistão alternativo de ignição por centelha (faísca*), de cilindrada superior a 3000 cm³, com capacidade de transporte de pessoas sentadas inferior ou igual a 6, incluído o condutor, exceto carro celular, carro funerário e automóveis de corrida"
+    },
+    {
+      "cest": "2500900",
+      "ncmPatterns": [
+        "87032490"
+      ],
+      "ncmRaw": "8703.24.90",
+      "descricao": "Outros automóveis unicamente com motor de pistão alternativo de ignição por centelha (faísca*), de cilindrada superior a 3000 cm³, exceto carro celular, carro funerário e automóveis de corrida"
+    },
+    {
+      "cest": "2501000",
+      "ncmPatterns": [
+        "87033210"
+      ],
+      "ncmRaw": "8703.32.10",
+      "descricao": "Automóveis unicamente com motor diesel ou semidiesel, de cilindrada superior a 1500 cm³, mas não superior a 2500 cm³, com capacidade de transporte de pessoas sentadas inferior ou igual a 6, incluído o condutor, exceto ambulância, carro celular e carro funerário"
+    },
+    {
+      "cest": "2501100",
+      "ncmPatterns": [
+        "87033290"
+      ],
+      "ncmRaw": "8703.32.90",
+      "descricao": "Outros automóveis unicamente com motor diesel ou semidiesel, de cilindrada superior a 1500 cm³, mas não superior a 2500 cm³, exceto ambulância, carro celular e carro funerário"
+    },
+    {
+      "cest": "2501200",
+      "ncmPatterns": [
+        "87033310"
+      ],
+      "ncmRaw": "8703.33.10",
+      "descricao": "Automóveis unicamente com motor diesel ou semidiesel, de cilindrada superior a 2500 cm³, com capacidade de transporte de pessoas sentadas inferior ou igual a 6, incluído o condutor, exceto carro celular e carro funerário"
+    },
+    {
+      "cest": "2501300",
+      "ncmPatterns": [
+        "87033390"
+      ],
+      "ncmRaw": "8703.33.90",
+      "descricao": "Outros automóveis unicamente com motor diesel ou semidiesel, de cilindrada superior a 2500 cm³, exceto carro celular e carro funerário"
+    },
+    {
+      "cest": "2501400",
+      "ncmPatterns": [
+        "87042110"
+      ],
+      "ncmRaw": "8704.21.10",
+      "descricao": "Veículos automóveis para transporte de mercadorias, de peso em carga máxima não superior a 5 (cinco) toneladas, chassis com motor diesel ou semidiesel e cabina, exceto caminhão de peso em carga máxima superior a 3,9 (três virgula nove) toneladas"
+    },
+    {
+      "cest": "2501500",
+      "ncmPatterns": [
+        "87042120"
+      ],
+      "ncmRaw": "8704.21.20",
+      "descricao": "Veículos automóveis para transporte de mercadorias, de peso em carga máxima não superior a 5 (cinco) toneladas, com motor diesel ou semidiesel com caixa basculante, exceto caminhão de peso em carga máxima superior a 3,9 (três virgula nove) toneladas."
+    },
+    {
+      "cest": "2501600",
+      "ncmPatterns": [
+        "87042130"
+      ],
+      "ncmRaw": "8704.21.30",
+      "descricao": "Veículos automóveis para transporte de mercadorias, de peso em carga máxima não superior a 5 (cinco) toneladas, frigoríficos ou isotérmicos com motor diesel ou semidiesel, exceto caminhão de peso em carga máxima superior a 3,9 (três virgula nove) toneladas"
+    },
+    {
+      "cest": "2501700",
+      "ncmPatterns": [
+        "87042190"
+      ],
+      "ncmRaw": "8704.21.90",
+      "descricao": "Outros veículos automóveis para transporte de mercadorias, de peso em carga máxima não superior a 5 (cinco) toneladas com motor diesel ou semidiesel, exceto carro-forte para transporte de valores e caminhão de peso em carga máxima superior a 3,9 (três virgula nove) toneladas."
+    },
+    {
+      "cest": "2501800",
+      "ncmPatterns": [
+        "87043110"
+      ],
+      "ncmRaw": "8704.31.10",
+      "descricao": "Veículos automóveis para transporte de mercadorias, de peso em carga máxima não superior a 5 (cinco) toneladas, com motor a explosão, chassis e cabina, exceto caminhão de peso em carga máxima superior a 3,9 (três virgula nove) toneladas"
+    },
+    {
+      "cest": "2501900",
+      "ncmPatterns": [
+        "87043120"
+      ],
+      "ncmRaw": "8704.31.20",
+      "descricao": "Veículos automóveis para transporte de mercadorias, de peso em carga máxima não superior a 5 (cinco) toneladas, com motor explosão e caixa basculante, exceto caminhão de peso em carga máxima superior a 3,9 (três virgula nove) toneladas"
+    },
+    {
+      "cest": "2502000",
+      "ncmPatterns": [
+        "87043130"
+      ],
+      "ncmRaw": "8704.31.30",
+      "descricao": "Veículos automóveis para transporte de mercadorias, de peso em carga máxima não superior a 5 (cinco) toneladas, frigoríficos ou isotérmicos com motor explosão, exceto caminhão de peso em carga máxima superior a 3,9 (três virgula nove) toneladas"
+    },
+    {
+      "cest": "2502100",
+      "ncmPatterns": [
+        "87043190"
+      ],
+      "ncmRaw": "8704.31.90",
+      "descricao": "Outros veículos automóveis para transporte de mercadorias, de peso em carga máxima não superior a 5 (cinco) toneladas, com motor a explosão, exceto carro-forte para transporte de valores e caminhão de peso em carga máxima superior a 3,9 (três virgula nove) toneladas."
+    },
+    {
+      "cest": "2502200",
+      "ncmPatterns": [
+        "87022000"
+      ],
+      "ncmRaw": "8702.20.00",
+      "descricao": "Veículos automóveis para transporte de 10 pessoas ou mais, incluindo o motorista, com motor de pistão, de ignição por compressão (diesel ou semidiesel) e um motor elétrico, com volume interno de habitáculo, destinado a passageiros e motorista, superior a 6 m³, mas inferior a 9 m³"
+    },
+    {
+      "cest": "2502300",
+      "ncmPatterns": [
+        "87023000"
+      ],
+      "ncmRaw": "8702.30.00",
+      "descricao": "Veículos automóveis para transporte de 10 pessoas ou mais, incluindo o motorista, com motor de pistão alternativo, de ignição por centelha (faísca) e um motor elétrico, com volume interno de habitáculo, destinado a passageiros e motorista, superior a 6 m³, mas inferior a 9 m³"
+    },
+    {
+      "cest": "2502400",
+      "ncmPatterns": [
+        "87029000"
+      ],
+      "ncmRaw": "8702.90.00",
+      "descricao": "Outros veículos automóveis para transporte de 10 pessoas ou mais, incluindo o motorista, com volume interno de habitáculo, destinado a passageiros e motorista, superior a 6 m³, mas inferior a 9 m³"
+    },
+    {
+      "cest": "2502500",
+      "ncmPatterns": [
+        "87034000"
+      ],
+      "ncmRaw": "8703.40.00",
+      "descricao": "Automóveis equipados para propulsão, simultaneamente, com um motor de pistão alternativo de ignição por centelha (faísca*) e um motor elétrico, exceto os suscetíveis de serem carregados por conexão a uma fonte externa de energia elétrica, o carro celular e o carro funerário"
+    },
+    {
+      "cest": "2502600",
+      "ncmPatterns": [
+        "87035000"
+      ],
+      "ncmRaw": "8703.50.00",
+      "descricao": "Automóveis equipados para propulsão, simultaneamente, com um motor de pistão por compressão (diesel ou semidiesel) e um motor elétrico, exceto os suscetíveis de serem carregados por conexão a uma fonte externa de energia elétrica, exceto o carro celular e o carro funerário"
+    },
+    {
+      "cest": "2502700",
+      "ncmPatterns": [
+        "87036000"
+      ],
+      "ncmRaw": "8703.60.00",
+      "descricao": "Automóveis equipados para propulsão, simultaneamente, com um motor de pistão alternativo de ignição por centelha (faísca*) e um motor elétrico, suscetíveis de serem carregados por conexão a uma fonte externa de energia elétrica, exceto o carro celular e o carro funerário"
+    },
+    {
+      "cest": "2502800",
+      "ncmPatterns": [
+        "87037000"
+      ],
+      "ncmRaw": "8703.70.00",
+      "descricao": "Automóveis equipados para propulsão, simultaneamente, com um motor de pistão por compressão (diesel ou semidiesel) e um motor elétrico, suscetíveis de serem carregados por conexão a uma fonte externa de energia elétrica, exceto o carro celular e o carro funerário"
+    },
+    {
+      "cest": "2502900",
+      "ncmPatterns": [
+        "87038000"
+      ],
+      "ncmRaw": "8703.80.00",
+      "descricao": "Outros veículos, equipados unicamente com motor elétrico para propulsão"
+    },
+    {
+      "cest": "2503000",
+      "ncmPatterns": [
+        "87044100"
+      ],
+      "ncmRaw": "8704.41.00",
+      "descricao": "Outros veículos para transportes de mercadorias equipados para propulsão, simultaneamente, com motor de pistão de ignição por compressão (diesel ou semidiesel) e motor elétrico de peso em carga máxima (bruto) não superior a 5 (cinco) toneladas, exceto caminhão de peso em carga máxima superior a 3,9 (três vírgula nove) toneladas (Convênio ICMS 66/22 )."
+    },
+    {
+      "cest": "2503100",
+      "ncmPatterns": [
+        "87045100"
+      ],
+      "ncmRaw": "8704.51.00",
+      "descricao": "Outros veículos para transportes de mercadorias equipados para propulsão, simultaneamente, com motor de pistão de ignição por centelha (faísca) e motor elétrico de peso em carga máxima (bruto) não superior a 5 (cinco) toneladas, exceto caminhão de peso em carga máxima superior a 3,9 (três vírgula nove) toneladas (Convênio ICMS 66/22 )."
+    },
+    {
+      "cest": "2503200",
+      "ncmPatterns": [
+        "87046000"
+      ],
+      "ncmRaw": "8704.60.00",
+      "descricao": "Outros veículos para transporte de mercadorias, unicamente com motor elétrico para propulsão, exceto veículo de peso em carga máxima superior a 3,9 toneladas (Convênio ICMS 174/24 )"
+    },
+    {
+      "cest": "2600100",
+      "ncmPatterns": [
+        "8711"
+      ],
+      "ncmRaw": "8711",
+      "descricao": "Motocicletas (incluídos os ciclomotores) e outros ciclos equipados com motor auxiliar, mesmo com carro lateral, exceto os classificados no CEST 26.001.01; carros laterais. (Convênio ICMS 4/22)"
+    },
+    {
+      "cest": "2600101",
+      "ncmPatterns": [
+        "8711"
+      ],
+      "ncmRaw": "8711",
+      "descricao": "Bicicletas e outros ciclos (incluídos os triciclos) com propulsão de motor elétrico auxiliar assistido pela força humana. (Convênio ICMS 4/22)"
+    },
+    {
+      "cest": "2800100",
+      "ncmPatterns": [
+        "33030010"
+      ],
+      "ncmRaw": "3303.00.10",
+      "descricao": "Perfumes (extratos)"
+    },
+    {
+      "cest": "2800200",
+      "ncmPatterns": [
+        "33030020"
+      ],
+      "ncmRaw": "3303.00.20",
+      "descricao": "Águas-de-colônia"
+    },
+    {
+      "cest": "2800300",
+      "ncmPatterns": [
+        "33041000"
+      ],
+      "ncmRaw": "3304.10.00",
+      "descricao": "Produtos de maquiagem para os lábios"
+    },
+    {
+      "cest": "2800400",
+      "ncmPatterns": [
+        "33042010"
+      ],
+      "ncmRaw": "3304.20.10",
+      "descricao": "Sombra, delineador, lápis para sobrancelhas e rímel"
+    },
+    {
+      "cest": "2800500",
+      "ncmPatterns": [
+        "33042090"
+      ],
+      "ncmRaw": "3304.20.90",
+      "descricao": "Outros produtos de maquiagem para os olhos"
+    },
+    {
+      "cest": "2800600",
+      "ncmPatterns": [
+        "33043000"
+      ],
+      "ncmRaw": "3304.30.00",
+      "descricao": "Preparações para manicuros e pedicuros"
+    },
+    {
+      "cest": "2800700",
+      "ncmPatterns": [
+        "33049100"
+      ],
+      "ncmRaw": "3304.91.00",
+      "descricao": "Pós para maquiagem, incluindo os compactos"
+    },
+    {
+      "cest": "2800800",
+      "ncmPatterns": [
+        "33049910"
+      ],
+      "ncmRaw": "3304.99.10",
+      "descricao": "Cremes de beleza, cremes nutritivos e loções tônicas"
+    },
+    {
+      "cest": "2800900",
+      "ncmPatterns": [
+        "33049990"
+      ],
+      "ncmRaw": "3304.99.90",
+      "descricao": "Outros produtos de beleza ou de maquiagem preparados e preparações para conservação ou cuidados da pele, exceto as preparações antissolares e os bronzeadores"
+    },
+    {
+      "cest": "2801000",
+      "ncmPatterns": [
+        "33049990"
+      ],
+      "ncmRaw": "3304.99.90",
+      "descricao": "Preparações antissolares e os bronzeadores"
+    },
+    {
+      "cest": "2801100",
+      "ncmPatterns": [
+        "33051000"
+      ],
+      "ncmRaw": "3305.10.00",
+      "descricao": "Xampus para o cabelo"
+    },
+    {
+      "cest": "2801200",
+      "ncmPatterns": [
+        "33052000"
+      ],
+      "ncmRaw": "3305.20.00",
+      "descricao": "Preparações para ondulação ou alisamento, permanentes, dos cabelos"
+    },
+    {
+      "cest": "2801300",
+      "ncmPatterns": [
+        "33059000"
+      ],
+      "ncmRaw": "3305.90.00",
+      "descricao": "Outras preparações capilares"
+    },
+    {
+      "cest": "2801400",
+      "ncmPatterns": [
+        "33059000"
+      ],
+      "ncmRaw": "3305.90.00",
+      "descricao": "Tintura para o cabelo"
+    },
+    {
+      "cest": "2801500",
+      "ncmPatterns": [
+        "33071000"
+      ],
+      "ncmRaw": "3307.10.00",
+      "descricao": "Preparações para barbear (antes, durante ou após)"
+    },
+    {
+      "cest": "2801600",
+      "ncmPatterns": [
+        "33072010"
+      ],
+      "ncmRaw": "3307.20.10",
+      "descricao": "Desodorantes corporais e antiperspirantes, líquidos"
+    },
+    {
+      "cest": "2801700",
+      "ncmPatterns": [
+        "33072090"
+      ],
+      "ncmRaw": "3307.20.90",
+      "descricao": "Outros desodorantes corporais e antiperspirantes"
+    },
+    {
+      "cest": "2801800",
+      "ncmPatterns": [
+        "33079000"
+      ],
+      "ncmRaw": "3307.90.00",
+      "descricao": "Outros produtos de perfumaria ou de toucador preparados"
+    },
+    {
+      "cest": "2801900",
+      "ncmPatterns": [
+        "33079000"
+      ],
+      "ncmRaw": "3307.90.00",
+      "descricao": "Outras preparações cosméticas"
+    },
+    {
+      "cest": "2802000",
+      "ncmPatterns": [
+        "34011190"
+      ],
+      "ncmRaw": "3401.11.90",
+      "descricao": "Sabões de toucador em barras, pedaços ou figuras moldados, exceto CEST 28.020.01"
+    },
+    {
+      "cest": "2802001",
+      "ncmPatterns": [
+        "34011190"
+      ],
+      "ncmRaw": "3401.11.90",
+      "descricao": "Lenços umedecidos"
+    },
+    {
+      "cest": "2802100",
+      "ncmPatterns": [
+        "34011900"
+      ],
+      "ncmRaw": "3401.19.00",
+      "descricao": "Outros sabões, produtos e preparações orgânicos tensoativos, inclusive papel, pastas (ouates), feltros e falsos tecidos, impregnados, revestidos ou recobertos de sabão ou de detergentes"
+    },
+    {
+      "cest": "2802200",
+      "ncmPatterns": [
+        "34012010"
+      ],
+      "ncmRaw": "3401.20.10",
+      "descricao": "Sabões de toucador sob outras formas"
+    },
+    {
+      "cest": "2802300",
+      "ncmPatterns": [
+        "34013000"
+      ],
+      "ncmRaw": "3401.30.00",
+      "descricao": "Produtos e preparações orgânicos tensoativos para lavagem da pele, em forma de líquido ou de creme, acondicionados para venda a retalho, mesmo contendo sabão"
+    },
+    {
+      "cest": "2802400",
+      "ncmPatterns": [
+        "48182000"
+      ],
+      "ncmRaw": "4818.20.00",
+      "descricao": "Lenços de papel, incluindo os de desmaquiar"
+    },
+    {
+      "cest": "2802401",
+      "ncmPatterns": [
+        "48182000"
+      ],
+      "ncmRaw": "4818.20.00",
+      "descricao": "Toalhas de mão"
+    },
+    {
+      "cest": "2802500",
+      "ncmPatterns": [
+        "82141000"
+      ],
+      "ncmRaw": "8214.10.00",
+      "descricao": "Apontadores de lápis para maquiagem"
+    },
+    {
+      "cest": "2802501",
+      "ncmPatterns": [
+        "82141000"
+      ],
+      "ncmRaw": "8214.10.00",
+      "descricao": "Espátulas, abre-cartas e raspadeiras"
+    },
+    {
+      "cest": "2802502",
+      "ncmPatterns": [
+        "82141000"
+      ],
+      "ncmRaw": "8214.10.00",
+      "descricao": "Lâminas de espátulas, de abre-cartas, de raspadeiras e de apontadores de lápis"
+    },
+    {
+      "cest": "2802600",
+      "ncmPatterns": [
+        "82142000"
+      ],
+      "ncmRaw": "8214.20.00",
+      "descricao": "Utensílios e sortidos de utensílios de manicuros ou de pedicuros (incluindo as limas para unhas)"
+    },
+    {
+      "cest": "2802700",
+      "ncmPatterns": [
+        "96032900"
+      ],
+      "ncmRaw": "9603.29.00",
+      "descricao": "Escovas e pincéis de barba, escovas para cabelos, para cílios ou para unhas e outras escovas de toucador de pessoas"
+    },
+    {
+      "cest": "2802701",
+      "ncmPatterns": [
+        "96032900"
+      ],
+      "ncmRaw": "9603.29.00",
+      "descricao": "Vassouras e escovas, mesmo constituindo partes de máquinas, de aparelhos ou de veículos, vassouras mecânicas de uso manual não motorizadas, pincéis e espanadores; cabeças preparadas para escovas, pincéis e artigos semelhantes; bonecas e rolos para pintura; rodos de borracha ou de matérias flexíveis semelhantes, outros"
+    },
+    {
+      "cest": "2802800",
+      "ncmPatterns": [
+        "96033000"
+      ],
+      "ncmRaw": "9603.30.00",
+      "descricao": "Pincéis para aplicação de produtos cosméticos"
+    },
+    {
+      "cest": "2802801",
+      "ncmPatterns": [
+        "96033000"
+      ],
+      "ncmRaw": "9603.30.00",
+      "descricao": "Pincéis e escovas, para artistas e pincéis de escrever"
+    },
+    {
+      "cest": "2802900",
+      "ncmPatterns": [
+        "96161000"
+      ],
+      "ncmRaw": "9616.10.00",
+      "descricao": "Vaporizadores de toucador, suas armações e cabeças de armações"
+    },
+    {
+      "cest": "2803000",
+      "ncmPatterns": [
+        "96162000"
+      ],
+      "ncmRaw": "9616.20.00",
+      "descricao": "Borlas ou esponjas para pós ou para aplicação de outros cosméticos ou de produtos de toucador"
+    },
+    {
+      "cest": "2803100",
+      "ncmPatterns": [
+        "4202"
+      ],
+      "ncmRaw": "4202.1",
+      "descricao": "Malas e maletas de toucador"
+    },
+    {
+      "cest": "2803200",
+      "ncmPatterns": [
+        "9615"
+      ],
+      "ncmRaw": "9615",
+      "descricao": "Pentes, travessas para cabelo e artigos semelhantes; grampos (alfinetes) para cabelo; pinças (“pinceguiches”), onduladores, bobs (rolos) e artefatos semelhantes para penteados, e suas partes"
+    },
+    {
+      "cest": "2803300",
+      "ncmPatterns": [
+        "39233000",
+        "39241000",
+        "39249000",
+        "40149090",
+        "70102000"
+      ],
+      "ncmRaw": "3923.30.00 3924.90.00 3924.10.00 4014.90.90 7010.20.00",
+      "descricao": "Mamadeiras"
+    },
+    {
+      "cest": "2803400",
+      "ncmPatterns": [
+        "40149090"
+      ],
+      "ncmRaw": "4014.90.90",
+      "descricao": "Chupetas e bicos para mamadeiras e para chupetas"
+    },
+    {
+      "cest": "2803500",
+      "ncmPatterns": [
+        "12119090"
+      ],
+      "ncmRaw": "1211.90.90",
+      "descricao": "Outras plantas e partes, para perfumaria, medicina e semelhantes"
+    },
+    {
+      "cest": "2803600",
+      "ncmPatterns": [
+        "39262000"
+      ],
+      "ncmRaw": "3926.20.00",
+      "descricao": "Vestuário e seus acessórios, de plásticos, inclusive luvas"
+    },
+    {
+      "cest": "2803700",
+      "ncmPatterns": [
+        "39264000"
+      ],
+      "ncmRaw": "3926.40.00",
+      "descricao": "Estatuetas e outros objetos de ornamentação, de plásticos"
+    },
+    {
+      "cest": "2803800",
+      "ncmPatterns": [
+        "39269090"
+      ],
+      "ncmRaw": "3926.90.90",
+      "descricao": "Outras obras de plásticos"
+    },
+    {
+      "cest": "2803900",
+      "ncmPatterns": [
+        "42022210"
+      ],
+      "ncmRaw": "4202.22.10",
+      "descricao": "Bolsas de folhas de plástico"
+    },
+    {
+      "cest": "2804000",
+      "ncmPatterns": [
+        "42022220"
+      ],
+      "ncmRaw": "4202.22.20",
+      "descricao": "Bolsas de matérias têxteis"
+    },
+    {
+      "cest": "2804100",
+      "ncmPatterns": [
+        "42022900"
+      ],
+      "ncmRaw": "4202.29.00",
+      "descricao": "Bolsas de outras matérias"
+    },
+    {
+      "cest": "2804200",
+      "ncmPatterns": [
+        "42023900"
+      ],
+      "ncmRaw": "4202.39.00",
+      "descricao": "Artigos de bolsos/bolsas, de outras matérias"
+    },
+    {
+      "cest": "2804300",
+      "ncmPatterns": [
+        "42029200"
+      ],
+      "ncmRaw": "4202.92.00",
+      "descricao": "Outros artefatos, de folhas de plásticos ou matérias têxteis"
+    },
+    {
+      "cest": "2804400",
+      "ncmPatterns": [
+        "42029900"
+      ],
+      "ncmRaw": "4202.99.00",
+      "descricao": "Outros artefatos, de outras matérias"
+    },
+    {
+      "cest": "2804500",
+      "ncmPatterns": [
+        "48192000"
+      ],
+      "ncmRaw": "4819.20.00",
+      "descricao": "Caixas e cartonagens, dobráveis, de papel/cartão, não ondulados"
+    },
+    {
+      "cest": "2804600",
+      "ncmPatterns": [
+        "48194000"
+      ],
+      "ncmRaw": "4819.40.00",
+      "descricao": "Outros sacos, bolsas e cartuchos, de papel ou cartão"
+    },
+    {
+      "cest": "2804700",
+      "ncmPatterns": [
+        "48211000"
+      ],
+      "ncmRaw": "4821.10.00",
+      "descricao": "Etiquetas de papel ou cartão, impressas"
+    },
+    {
+      "cest": "2804800",
+      "ncmPatterns": [
+        "49111090"
+      ],
+      "ncmRaw": "4911.10.90",
+      "descricao": "Outros impressos publicitários, catálogos comerciais e semelhantes"
+    },
+    {
+      "cest": "2804900",
+      "ncmPatterns": [
+        "61159900"
+      ],
+      "ncmRaw": "6115.99.00",
+      "descricao": "Outras meias de malha de outras matérias têxteis"
+    },
+    {
+      "cest": "2805000",
+      "ncmPatterns": [
+        "62171000"
+      ],
+      "ncmRaw": "6217.10.00",
+      "descricao": "Outros acessórios confeccionados, de vestuário"
+    },
+    {
+      "cest": "2805100",
+      "ncmPatterns": [
+        "63026000"
+      ],
+      "ncmRaw": "6302.60.00",
+      "descricao": "Roupas de toucador/cozinha, de tecidos atoalhados de algodão"
+    },
+    {
+      "cest": "2805200",
+      "ncmPatterns": [
+        "63079090"
+      ],
+      "ncmRaw": "6307.90.90",
+      "descricao": "Outros artefatos têxteis confeccionados"
+    },
+    {
+      "cest": "2805300",
+      "ncmPatterns": [
+        "65069900"
+      ],
+      "ncmRaw": "6506.99.00",
+      "descricao": "Chapéus e outros artefatos de outras matérias, exceto de malha"
+    },
+    {
+      "cest": "2805400",
+      "ncmPatterns": [
+        "95059000"
+      ],
+      "ncmRaw": "9505.90.00",
+      "descricao": "Artigos para outras festas, carnaval ou outros divertimentos"
+    }
+  ]
+}

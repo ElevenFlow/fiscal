@@ -1,19 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import type {
   PageResult,
   ProdutoCreateInput,
   ProdutoListQuery,
   ProdutoUpdateInput,
 } from '@nexo/shared';
-import {
-  DuplicateException,
-  NotFoundResourceException,
-} from '../../common/business.exception';
+import { Prisma, type Produto } from '@prisma/client';
+import { DuplicateException, NotFoundResourceException } from '../../common/business.exception';
 import { parseSort } from '../../common/parse-sort';
 // biome-ignore lint/style/useImportType: NestJS DI exige valor runtime.
 import { PrismaService } from '../../db/prisma.service';
 import { requireTenant } from '../../db/tenant-context';
+// biome-ignore lint/style/useImportType: NestJS DI exige valor runtime.
+import { ProdutoFiscalValidationService } from './produto-fiscal-validation.service';
 
 const SORTABLE_FIELDS = ['descricao', 'codigo', 'ncm', 'createdAt', 'updatedAt'] as const;
 
@@ -29,7 +28,10 @@ const SORTABLE_FIELDS = ['descricao', 'codigo', 'ncm', 'createdAt', 'updatedAt']
  */
 @Injectable()
 export class ProdutosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly fiscalValidation: ProdutoFiscalValidationService,
+  ) {}
 
   async list(query: ProdutoListQuery): Promise<PageResult<unknown>> {
     const { tenantId } = requireTenant();
@@ -66,7 +68,7 @@ export class ProdutosService {
     return { items, page: query.page, pageSize: query.pageSize, total };
   }
 
-  async findOne(id: string): Promise<unknown> {
+  async findOne(id: string): Promise<Produto> {
     const { tenantId } = requireTenant();
     const row = await this.prisma.produto.findFirst({
       where: tenantId ? { id, tenantId } : { id },
@@ -78,6 +80,8 @@ export class ProdutosService {
   async create(dto: ProdutoCreateInput): Promise<unknown> {
     const { tenantId } = requireTenant();
     if (!tenantId) throw new NotFoundResourceException('produto', 'no_tenant_context');
+
+    await this.fiscalValidation.validate({ ncm: dto.ncm, cest: dto.cest });
 
     try {
       return await this.prisma.produto.create({
@@ -115,7 +119,12 @@ export class ProdutosService {
   }
 
   async update(id: string, dto: ProdutoUpdateInput): Promise<unknown> {
-    await this.findOne(id);
+    const current = await this.findOne(id);
+    await this.fiscalValidation.validate({
+      ncm: dto.ncm ?? current.ncm,
+      cest: dto.cest !== undefined ? dto.cest : current.cest,
+    });
+
     try {
       const data: Prisma.ProdutoUpdateInput = {};
       // Apenas campos presentes no DTO são repassados (PATCH semantics).
