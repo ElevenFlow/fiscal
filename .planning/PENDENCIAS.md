@@ -49,6 +49,7 @@ Prioridade sugerida:
 | PEND-024 | Phase 6 / Dashboards | Materialized views de KPIs e refresh incremental | Dashboards calculam sobre tabelas operacionais no MVP; budget de 2s em carteira grande exige views materializadas | Antes de carteira contábil com volume real | P2 | Aberta |
 | PEND-025 | Phase 7 / Usuários e E-mails | Ligar provedor transacional para convites, redefinição de senha e teste/envio de templates fiscais | A Fase 7 criou usuários, perfis e templates persistidos; envio real depende da escolha de provedor SMTP/API e validação de domínio/remetente | Antes de piloto com usuários convidados por e-mail | P1 | Aberta |
 | PEND-026 | Phase 8 / Go-live operacional | Definir se o próximo passo será um piloto controlado ou atacar pendências críticas primeiro | A decisão depende de apetite de risco, cliente piloto disponível, ambiente real e aceite sobre as pendências P0/P1 ainda abertas | Reunião de go/no-go pós-validação operacional | P0 | Aberta |
+| PEND-027 | Infra / Backend deploy | Deployar `apps/api` (NestJS) em host real (Render/Railway/Fly/AWS) e setar `NEXT_PUBLIC_API_URL` na Vercel para o domínio público | Apenas `@nexo/web` está deployado; switcher de empresa e listagens dependem de `/api/empresas/*`. Fallback mock client-side ligado em `empresa-switcher.tsx` e `cadastros/empresas/page.tsx` para liberar testes na Vercel; remover quando o backend estiver online | Antes de qualquer teste/piloto com dados reais | P1 | Aberta |
 
 ## Pendências Da Próxima Fase
 
