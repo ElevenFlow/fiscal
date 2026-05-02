@@ -16,14 +16,10 @@ import { withTenantContext } from '../../db/with-tenant';
 const SORTABLE_FIELDS = ['razaoSocial', 'cnpj', 'createdAt', 'updatedAt'] as const;
 
 /**
- * EmpresasService — CRUD de Empresa (tenant) (Phase 2 Plan 02-02).
+ * EmpresasService - CRUD de Empresa (tenant).
  *
- * Diferenças vs Cliente/Fornecedor:
- *  - cnpj é UNIQUE GLOBAL (em todos os tenants) — duplicidade não é por-tenant.
- *  - tenantId é managed by app: na criação, sempre tenantId = id (mesmo padrão
- *    das migrations Phase 1; trigger empresa_tenant_id_before_insert também garante).
- *  - Endpoint extra `findMinhas()` lista empresas da contabilidade do user
- *    autenticado — usado pelo EmpresaSwitcher web (Plan 02-09 fallback).
+ * Empresa cria o proprio tenant, entao create roda em contexto platform_admin
+ * controlado e, quando possivel, vincula a nova empresa a contabilidade do usuario.
  */
 @Injectable()
 export class EmpresasService {
@@ -32,7 +28,6 @@ export class EmpresasService {
   async list(query: EmpresaListQuery): Promise<PageResult<unknown>> {
     const { tenantId, role } = requireTenant();
 
-    // platform_admin lista todas; demais roles veem apenas a empresa do seu tenant ativo.
     const where: Prisma.EmpresaWhereInput = {};
     if (role !== 'platform_admin') {
       if (!tenantId) {
@@ -80,40 +75,43 @@ export class EmpresasService {
   }
 
   async create(dto: EmpresaCreateInput): Promise<unknown> {
+    const { userId } = requireTenant();
+
     try {
-      const created = await this.prisma.empresa.create({
-        data: {
-          // tenantId será setado em trigger before_insert; passamos null e o DB
-          // garante. Mas Prisma exige o campo — usamos um placeholder UUID estável
-          // que o trigger sobrescreve. Como segurança, geramos no app (cuid via DB):
-          // alternativa mais simples — deixar Prisma gerar o id e usar mesmo valor:
-          razaoSocial: dto.razaoSocial,
-          nomeFantasia: dto.nomeFantasia ?? null,
-          cnpj: dto.cnpj,
-          ie: dto.ie ?? null,
-          im: dto.im ?? null,
-          cnae: dto.cnae ?? null,
-          regimeTributario: dto.regimeTributario,
-          endereco: dto.endereco ? (dto.endereco as Prisma.InputJsonValue) : Prisma.JsonNull,
-          contatos: dto.contatos ? (dto.contatos as Prisma.InputJsonValue) : Prisma.JsonNull,
-          // Database trigger empresa_tenant_id_before_insert seta tenantId=id automaticamente.
-          // Passamos a string vazia e o trigger sobrescreve.
-          // Como Prisma valida UUID format, geramos um UUID temp via crypto que será sobrescrito.
-          tenantId: '00000000-0000-0000-0000-000000000000',
+      return await withTenantContext(
+        this.prisma,
+        { tenantId: null, role: 'platform_admin', userId },
+        async (tx) => {
+          const created = await tx.empresa.create({
+            data: {
+              razaoSocial: dto.razaoSocial,
+              nomeFantasia: dto.nomeFantasia ?? null,
+              cnpj: dto.cnpj,
+              ie: dto.ie ?? null,
+              im: dto.im ?? null,
+              cnae: dto.cnae ?? null,
+              regimeTributario: dto.regimeTributario,
+              endereco: dto.endereco ? (dto.endereco as Prisma.InputJsonValue) : Prisma.JsonNull,
+              contatos: dto.contatos ? (dto.contatos as Prisma.InputJsonValue) : Prisma.JsonNull,
+              // Prisma exige UUID antes do trigger; o banco sobrescreve para id.
+              tenantId: '00000000-0000-0000-0000-000000000000',
+            },
+          });
+
+          const contabilidadeId =
+            dto.contabilidadeId ?? (await this.firstContabilidadeMembership(tx, userId));
+          if (contabilidadeId) {
+            await tx.contabilidadeEmpresa.create({
+              data: {
+                contabilidadeId,
+                empresaId: created.id,
+              },
+            });
+          }
+
+          return created;
         },
-      });
-
-      // Vincula à contabilidade se informada (tabela ContabilidadeEmpresa).
-      if (dto.contabilidadeId) {
-        await this.prisma.contabilidadeEmpresa.create({
-          data: {
-            contabilidadeId: dto.contabilidadeId,
-            empresaId: created.id,
-          },
-        });
-      }
-
-      return created;
+      );
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new DuplicateException('cnpj', dto.cnpj);
@@ -155,17 +153,6 @@ export class EmpresasService {
     await this.prisma.empresa.update({ where: { id }, data: { ativo: false } });
   }
 
-  /**
-   * Empresas da contabilidade do user autenticado (consumo: EmpresaSwitcher web).
-   *
-   * - platform_admin: lista todas as empresas ativas.
-   * - contabilidade_*: lista empresas vinculadas via ContabilidadeEmpresa.
-   * - sem contabilidadeId no scope: retorna [].
-   *
-   * Cross-tenant scope (lista empresas de várias tenant_ids): roda em
-   * platform_admin via withTenantContext para que RLS não filtre nada — esta
-   * é uma operação identity-scoped (membership do user), não tenant-scoped.
-   */
   async findMinhas(): Promise<unknown[]> {
     const { contabilidadeId, role, userId } = requireTenant();
 
@@ -218,5 +205,21 @@ export class EmpresasService {
         return [...empresas.values()];
       },
     );
+  }
+
+  private async firstContabilidadeMembership(
+    tx: Prisma.TransactionClient,
+    userId: string | null,
+  ): Promise<string | null> {
+    if (!userId) return null;
+    const membership = await tx.userMembership.findFirst({
+      where: {
+        userId,
+        scopeType: 'contabilidade',
+        role: { in: ['contabilidade_owner', 'contabilidade_operador'] },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    return membership?.scopeId ?? null;
   }
 }
