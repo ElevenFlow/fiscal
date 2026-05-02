@@ -28,6 +28,14 @@ interface EmpresaListItem {
   cnpj: string;
   regimeTributario: string;
   endereco: { cidade?: string; uf?: string } | null;
+  contabilidades?: Array<{
+    ativo: boolean;
+    contabilidade: {
+      id: string;
+      nome: string;
+      cnpj: string;
+    };
+  }>;
   ativo: boolean;
   createdAt: string;
 }
@@ -113,6 +121,29 @@ export default function EmpresasListPage() {
           <span>
             {cidade}/<span className="font-semibold">{ufVal}</span>
           </span>
+        );
+      },
+    },
+    {
+      key: 'contabilidade',
+      header: 'Contabilidade',
+      render: (e) => {
+        const vinculosAtivos = e.contabilidades?.filter((vinculo) => vinculo.ativo) ?? [];
+        if (vinculosAtivos.length === 0) {
+          return <span className="text-muted-foreground">Sem vínculo</span>;
+        }
+
+        return (
+          <div className="space-y-0.5">
+            {vinculosAtivos.map((vinculo) => (
+              <div key={vinculo.contabilidade.id} className="leading-tight">
+                <div className="font-medium">{vinculo.contabilidade.nome}</div>
+                <div className="font-mono text-xs text-muted-foreground">
+                  {vinculo.contabilidade.cnpj}
+                </div>
+              </div>
+            ))}
+          </div>
         );
       },
     },

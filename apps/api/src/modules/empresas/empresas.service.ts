@@ -19,7 +19,9 @@ const SORTABLE_FIELDS = ['razaoSocial', 'cnpj', 'createdAt', 'updatedAt'] as con
  * EmpresasService - CRUD de Empresa (tenant).
  *
  * Empresa cria o proprio tenant, entao create roda em contexto platform_admin
- * controlado e, quando possivel, vincula a nova empresa a contabilidade do usuario.
+ * controlado. O vinculo com contabilidade e opcional: quando existe, concede
+ * acesso daquela contabilidade a empresa; quando nao existe, a empresa segue
+ * independente e visivel apenas para administradores ou usuarios vinculados.
  */
 @Injectable()
 export class EmpresasService {
@@ -46,6 +48,7 @@ export class EmpresasService {
         const [items, total] = await Promise.all([
           tx.empresa.findMany({
             where,
+            include: this.empresaInclude(scope),
             orderBy,
             skip: (query.page - 1) * query.pageSize,
             take: query.pageSize,
@@ -72,7 +75,10 @@ export class EmpresasService {
       },
       async (tx) => {
         const where = await this.visibleEmpresaWhere(tx, scope);
-        return tx.empresa.findFirst({ where: { ...where, id } });
+        return tx.empresa.findFirst({
+          where: { ...where, id },
+          include: this.empresaInclude(scope),
+        });
       },
     );
     if (!row) throw new NotFoundResourceException('empresa', id);
@@ -104,7 +110,7 @@ export class EmpresasService {
           });
 
           const contabilidadeId =
-            dto.contabilidadeId ?? (await this.resolveContabilidadeForNewEmpresa(tx, userId));
+            dto.contabilidadeId ?? (await this.firstContabilidadeMembership(tx, userId));
           if (contabilidadeId) {
             await tx.contabilidadeEmpresa.create({
               data: {
@@ -212,7 +218,7 @@ export class EmpresasService {
     );
   }
 
-  private async resolveContabilidadeForNewEmpresa(
+  private async firstContabilidadeMembership(
     tx: Prisma.TransactionClient,
     userId: string | null,
   ): Promise<string | null> {
@@ -225,19 +231,7 @@ export class EmpresasService {
       },
       orderBy: { createdAt: 'asc' },
     });
-    if (membership?.scopeId) return membership.scopeId;
-
-    const platformMembership = await tx.userMembership.findFirst({
-      where: { userId, scopeType: 'platform', role: 'admin' },
-    });
-    if (!platformMembership) return null;
-
-    const contabilidades = await tx.contabilidade.findMany({
-      orderBy: { createdAt: 'asc' },
-      take: 2,
-      select: { id: true },
-    });
-    return contabilidades.length === 1 ? (contabilidades[0]?.id ?? null) : null;
+    return membership?.scopeId ?? null;
   }
 
   private async buildListWhere(
@@ -301,5 +295,23 @@ export class EmpresasService {
     }
 
     return [...empresaIds];
+  }
+
+  private empresaInclude(scope: TenantScope): Prisma.EmpresaInclude | undefined {
+    if (scope.role !== 'platform_admin') return undefined;
+    return {
+      contabilidades: {
+        include: {
+          contabilidade: {
+            select: {
+              id: true,
+              nome: true,
+              cnpj: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+    };
   }
 }
