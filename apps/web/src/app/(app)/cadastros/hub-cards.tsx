@@ -36,7 +36,7 @@ interface HubCard {
 
 export function CadastrosHubCards() {
   const role = useMockRole();
-  const cards: HubCard[] = [
+  const allCards: HubCard[] = [
     {
       href: '/cadastros/empresas',
       title: 'Empresas',
@@ -97,7 +97,8 @@ export function CadastrosHubCards() {
       accent: 'bg-brand-green/10 text-brand-green',
       roles: ['admin', 'contabilidade', 'empresa'],
     },
-  ].filter((card) => card.roles.includes(role));
+  ];
+  const cards = allCards.filter((card) => card.roles.includes(role));
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
