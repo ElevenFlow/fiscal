@@ -12,28 +12,17 @@ import {
 } from '@nexo/ui';
 import { Building2, Check, ChevronsUpDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { mockEmpresas } from '@/lib/mock-data';
-
-/**
- * Seletor de empresa ativa no header (Plan 02-09).
- *
- * Com Clerk religado, este componente faz fetch para `/api/empresas/minhas` (Route
- * Handler proxy → apps/api). Em fallback (endpoint 404 ou rede off), usa
- * `mockEmpresas` para não quebrar a UI durante a Wave 1.
- *
- * Phase 2 CAD-02 implementa o endpoint real (depende de Plan 02-02).
- */
 
 interface EmpresaItem {
   id: string;
   razaoSocial: string;
   cnpj: string;
-  ambiente: 'producao' | 'homologacao';
+  ambiente?: 'producao' | 'homologacao';
 }
 
 export function EmpresaSwitcher() {
-  const [empresas, setEmpresas] = useState<EmpresaItem[]>(mockEmpresas);
-  const [selectedId, setSelectedId] = useState<string>(mockEmpresas[0]?.id ?? '');
+  const [empresas, setEmpresas] = useState<EmpresaItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
@@ -41,13 +30,19 @@ export function EmpresaSwitcher() {
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const json = (await r.json()) as { empresas?: EmpresaItem[] };
-        if (!cancelled && json.empresas?.length) {
-          setEmpresas(json.empresas);
-          setSelectedId((prev) => prev || (json.empresas?.[0]?.id ?? ''));
-        }
+        if (cancelled) return;
+
+        const nextEmpresas = json.empresas ?? [];
+        setEmpresas(nextEmpresas);
+        setSelectedId((prev) =>
+          nextEmpresas.some((empresa) => empresa.id === prev) ? prev : (nextEmpresas[0]?.id ?? ''),
+        );
       })
       .catch(() => {
-        // Silencioso — fallback é mockEmpresas (já no state inicial)
+        if (!cancelled) {
+          setEmpresas([]);
+          setSelectedId('');
+        }
       });
     return () => {
       cancelled = true;
@@ -106,7 +101,9 @@ export function EmpresaSwitcher() {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-brand-blue">+ Nova empresa</DropdownMenuItem>
+        <DropdownMenuItem asChild className="text-brand-blue">
+          <a href="/cadastros/empresas/novo">+ Nova empresa</a>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
