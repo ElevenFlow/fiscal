@@ -10,7 +10,7 @@ import { DuplicateException, NotFoundResourceException } from '../../common/busi
 import { parseSort } from '../../common/parse-sort';
 // biome-ignore lint/style/useImportType: NestJS DI exige valor runtime.
 import { PrismaService } from '../../db/prisma.service';
-import { requireTenant } from '../../db/tenant-context';
+import { type TenantScope, requireTenant } from '../../db/tenant-context';
 import { withTenantContext } from '../../db/with-tenant';
 
 const SORTABLE_FIELDS = ['razaoSocial', 'cnpj', 'createdAt', 'updatedAt'] as const;
@@ -26,50 +26,55 @@ export class EmpresasService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(query: EmpresaListQuery): Promise<PageResult<unknown>> {
-    const { tenantId, role } = requireTenant();
-
-    const where: Prisma.EmpresaWhereInput = {};
-    if (role !== 'platform_admin') {
-      if (!tenantId) {
-        return { items: [], page: query.page, pageSize: query.pageSize, total: 0 };
-      }
-      where.tenantId = tenantId;
-    }
-
-    if (query.search) {
-      const digits = query.search.replace(/\D/g, '');
-      where.OR = [
-        { razaoSocial: { contains: query.search, mode: 'insensitive' } },
-        { nomeFantasia: { contains: query.search, mode: 'insensitive' } },
-        ...(digits.length >= 3 ? [{ cnpj: { contains: digits } }] : []),
-      ];
-    }
-    if (query.regimeTributario) where.regimeTributario = query.regimeTributario;
-    if (query.ativo !== undefined) where.ativo = query.ativo === 'true';
+    const scope = requireTenant();
 
     const orderBy = parseSort(query.sort, {
       allowed: SORTABLE_FIELDS,
       default: { razaoSocial: 'asc' },
     });
 
-    const [items, total] = await Promise.all([
-      this.prisma.empresa.findMany({
-        where,
-        orderBy,
-        skip: (query.page - 1) * query.pageSize,
-        take: query.pageSize,
-      }),
-      this.prisma.empresa.count({ where }),
-    ]);
+    const { items, total } = await withTenantContext(
+      this.prisma,
+      {
+        tenantId: null,
+        contabilidadeId: scope.contabilidadeId,
+        userId: scope.userId,
+        role: 'platform_admin',
+      },
+      async (tx) => {
+        const where = await this.buildListWhere(tx, query, scope);
+        const [items, total] = await Promise.all([
+          tx.empresa.findMany({
+            where,
+            orderBy,
+            skip: (query.page - 1) * query.pageSize,
+            take: query.pageSize,
+          }),
+          tx.empresa.count({ where }),
+        ]);
+
+        return { items, total };
+      },
+    );
 
     return { items, page: query.page, pageSize: query.pageSize, total };
   }
 
   async findOne(id: string): Promise<unknown> {
-    const { tenantId, role } = requireTenant();
-    const where: Prisma.EmpresaWhereInput =
-      role === 'platform_admin' || !tenantId ? { id } : { id, tenantId };
-    const row = await this.prisma.empresa.findFirst({ where });
+    const scope = requireTenant();
+    const row = await withTenantContext(
+      this.prisma,
+      {
+        tenantId: null,
+        contabilidadeId: scope.contabilidadeId,
+        userId: scope.userId,
+        role: 'platform_admin',
+      },
+      async (tx) => {
+        const where = await this.visibleEmpresaWhere(tx, scope);
+        return tx.empresa.findFirst({ where: { ...where, id } });
+      },
+    );
     if (!row) throw new NotFoundResourceException('empresa', id);
     return row;
   }
@@ -99,7 +104,7 @@ export class EmpresasService {
           });
 
           const contabilidadeId =
-            dto.contabilidadeId ?? (await this.firstContabilidadeMembership(tx, userId));
+            dto.contabilidadeId ?? (await this.resolveContabilidadeForNewEmpresa(tx, userId));
           if (contabilidadeId) {
             await tx.contabilidadeEmpresa.create({
               data: {
@@ -207,7 +212,7 @@ export class EmpresasService {
     );
   }
 
-  private async firstContabilidadeMembership(
+  private async resolveContabilidadeForNewEmpresa(
     tx: Prisma.TransactionClient,
     userId: string | null,
   ): Promise<string | null> {
@@ -220,6 +225,81 @@ export class EmpresasService {
       },
       orderBy: { createdAt: 'asc' },
     });
-    return membership?.scopeId ?? null;
+    if (membership?.scopeId) return membership.scopeId;
+
+    const platformMembership = await tx.userMembership.findFirst({
+      where: { userId, scopeType: 'platform', role: 'admin' },
+    });
+    if (!platformMembership) return null;
+
+    const contabilidades = await tx.contabilidade.findMany({
+      orderBy: { createdAt: 'asc' },
+      take: 2,
+      select: { id: true },
+    });
+    return contabilidades.length === 1 ? (contabilidades[0]?.id ?? null) : null;
+  }
+
+  private async buildListWhere(
+    tx: Prisma.TransactionClient,
+    query: EmpresaListQuery,
+    scope: TenantScope,
+  ): Promise<Prisma.EmpresaWhereInput> {
+    const where = await this.visibleEmpresaWhere(tx, scope);
+
+    if (query.search) {
+      const digits = query.search.replace(/\D/g, '');
+      where.OR = [
+        { razaoSocial: { contains: query.search, mode: 'insensitive' } },
+        { nomeFantasia: { contains: query.search, mode: 'insensitive' } },
+        ...(digits.length >= 3 ? [{ cnpj: { contains: digits } }] : []),
+      ];
+    }
+    if (query.regimeTributario) where.regimeTributario = query.regimeTributario;
+    if (query.ativo !== undefined) where.ativo = query.ativo === 'true';
+    if (query.uf) where.endereco = { path: ['uf'], equals: query.uf };
+
+    return where;
+  }
+
+  private async visibleEmpresaWhere(
+    tx: Prisma.TransactionClient,
+    scope: TenantScope,
+  ): Promise<Prisma.EmpresaWhereInput> {
+    if (scope.role === 'platform_admin') return {};
+
+    const empresaIds = await this.visibleEmpresaIds(tx, scope);
+    return { id: { in: empresaIds } };
+  }
+
+  private async visibleEmpresaIds(
+    tx: Prisma.TransactionClient,
+    scope: TenantScope,
+  ): Promise<string[]> {
+    const memberships = scope.userId
+      ? await tx.userMembership.findMany({ where: { userId: scope.userId } })
+      : [];
+    const contabilidadeIds = new Set<string>();
+    const empresaIds = new Set<string>();
+
+    if (scope.contabilidadeId) contabilidadeIds.add(scope.contabilidadeId);
+    for (const membership of memberships) {
+      if (membership.scopeType === 'contabilidade' && membership.scopeId) {
+        contabilidadeIds.add(membership.scopeId);
+      }
+      if (membership.scopeType === 'empresa' && membership.scopeId) {
+        empresaIds.add(membership.scopeId);
+      }
+    }
+
+    if (contabilidadeIds.size > 0) {
+      const links = await tx.contabilidadeEmpresa.findMany({
+        where: { contabilidadeId: { in: [...contabilidadeIds] }, ativo: true },
+        select: { empresaId: true },
+      });
+      for (const link of links) empresaIds.add(link.empresaId);
+    }
+
+    return [...empresaIds];
   }
 }

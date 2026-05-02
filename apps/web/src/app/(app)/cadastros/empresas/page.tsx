@@ -47,7 +47,7 @@ export default function EmpresasListPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const { data, isLoading } = useQuery<PageResult<EmpresaListItem>>({
+  const { data, isFetching, isLoading, refetch } = useQuery<PageResult<EmpresaListItem>>({
     queryKey: ['empresas', { page, pageSize, search, regime, uf }],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -100,7 +100,8 @@ export default function EmpresasListPage() {
     {
       key: 'regime',
       header: 'Regime',
-      render: (e) => REGIMES.find((r) => r.value === e.regimeTributario)?.label ?? e.regimeTributario,
+      render: (e) =>
+        REGIMES.find((r) => r.value === e.regimeTributario)?.label ?? e.regimeTributario,
     },
     {
       key: 'local',
@@ -118,9 +119,7 @@ export default function EmpresasListPage() {
     {
       key: 'status',
       header: 'Status',
-      render: (e) => (
-        <StatusPill status={e.ativo ? 'autorizada' : 'cancelada'} />
-      ),
+      render: (e) => <StatusPill status={e.ativo ? 'autorizada' : 'cancelada'} />,
     },
   ];
 
@@ -185,6 +184,8 @@ export default function EmpresasListPage() {
             />
           </>
         }
+        onRefresh={() => void refetch()}
+        isRefreshing={isFetching}
         onClearFilters={() => {
           setSearch('');
           setRegime('');

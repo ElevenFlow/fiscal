@@ -1,8 +1,7 @@
 'use client';
 
 import { Button, Card, Input, cn } from '@nexo/ui';
-import { Search } from 'lucide-react';
-import { Inbox } from 'lucide-react';
+import { Inbox, RefreshCw, Search, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { EmptyState } from './empty-state';
 
@@ -23,6 +22,8 @@ export interface DataTableProps<T> {
   searchPlaceholder?: string;
   filters?: ReactNode;
   onClearFilters?: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
   actions?: (row: T) => ReactNode;
   page: number;
   pageSize: number;
@@ -42,6 +43,8 @@ export function DataTable<T>({
   searchPlaceholder = 'Buscar...',
   filters,
   onClearFilters,
+  onRefresh,
+  isRefreshing = false,
   actions,
   page,
   pageSize,
@@ -79,9 +82,30 @@ export function DataTable<T>({
           {filters ? (
             <div className="flex flex-wrap items-center gap-2">
               {filters}
+              {onRefresh ? (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                  aria-label="Atualizar"
+                  title="Atualizar"
+                >
+                  <RefreshCw
+                    className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
+                    aria-hidden
+                  />
+                </Button>
+              ) : null}
               {onClearFilters ? (
-                <Button variant="ghost" size="sm" onClick={onClearFilters}>
-                  Limpar
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClearFilters}
+                  aria-label="Limpar filtros"
+                  title="Limpar filtros"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
                 </Button>
               ) : null}
             </div>
