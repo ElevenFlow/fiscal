@@ -1,17 +1,18 @@
+import { ApiError, fetchApi } from '@/lib/api-client';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { ApiError, fetchApi } from '@/lib/api-client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const { id } = await params;
+  const tenantId = req.nextUrl.searchParams.get('tenantId');
   try {
-    const data = await fetchApi(`/api/fiscal/nfe/${id}/emitir`, { method: 'POST' });
+    const data = await fetchApi(`/api/fiscal/nfe/${id}/emitir`, { method: 'POST', tenantId });
     return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     if (err instanceof ApiError) {
@@ -23,6 +24,9 @@ export async function POST(
       }
       return NextResponse.json(parsed, { status: err.status });
     }
-    return NextResponse.json({ code: 'INTERNAL_ERROR', message: 'Internal error' }, { status: 500 });
+    return NextResponse.json(
+      { code: 'INTERNAL_ERROR', message: 'Internal error' },
+      { status: 500 },
+    );
   }
 }

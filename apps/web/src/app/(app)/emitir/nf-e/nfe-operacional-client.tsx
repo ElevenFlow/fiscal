@@ -2,7 +2,7 @@
 
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, StatusPill } from '@nexo/ui';
 import { Ban, Download, FileText, Loader2, RefreshCw, Send } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 type SerieFiscal = {
@@ -15,6 +15,7 @@ type SerieFiscal = {
 };
 
 type Empresa = { id: string; razaoSocial?: string; nomeFantasia?: string };
+type EmpresasResponse = Empresa[] | { empresas?: Empresa[]; items?: Empresa[] };
 
 type NotaFiscalApi = {
   id: string;
@@ -41,7 +42,10 @@ type NotaFiscalApi = {
   }>;
 };
 
-const statusMap: Record<string, 'autorizada' | 'rejeitada' | 'cancelada' | 'pendente' | 'processando' | 'rascunho'> = {
+const statusMap: Record<
+  string,
+  'autorizada' | 'rejeitada' | 'cancelada' | 'pendente' | 'processando' | 'rascunho'
+> = {
   AUTHORIZED: 'autorizada',
   CANCELLED: 'cancelada',
   REJECTED: 'rejeitada',
@@ -50,6 +54,13 @@ const statusMap: Record<string, 'autorizada' | 'rejeitada' | 'cancelada' | 'pend
   SIGNING: 'processando',
   DRAFT: 'rascunho',
 };
+
+function normalizeEmpresas(data: EmpresasResponse): Empresa[] {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.empresas)) return data.empresas;
+  if (Array.isArray(data.items)) return data.items;
+  return [];
+}
 
 export function NfeOperacionalClient() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -64,33 +75,47 @@ export function NfeOperacionalClient() {
     [series, serieFiscalId],
   );
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [empresasRes, seriesRes, notasRes] = await Promise.all([
-        fetch('/api/empresas/minhas'),
-        fetch('/api/series'),
-        fetch('/api/fiscal/nfe'),
-      ]);
-      const empresasData = empresasRes.ok ? await empresasRes.json() : [];
-      const seriesData = seriesRes.ok ? await seriesRes.json() : [];
-      const notasData = notasRes.ok ? await notasRes.json() : [];
-      const nfeSeries = (Array.isArray(seriesData) ? seriesData : []).filter(
-        (serie: SerieFiscal) => serie.modelo === 'NFE_55' && serie.ativa,
-      );
-      setEmpresas(Array.isArray(empresasData) ? empresasData : []);
-      setSeries(nfeSeries);
-      setNotas(Array.isArray(notasData) ? notasData : []);
-      setEmpresaId((current) => current || empresasData?.[0]?.id || '');
-      setSerieFiscalId((current) => current || nfeSeries?.[0]?.id || '');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const load = useCallback(
+    async (requestedEmpresaId = empresaId) => {
+      setLoading(true);
+      try {
+        const empresasRes = await fetch('/api/empresas/minhas');
+        const empresasData = normalizeEmpresas(empresasRes.ok ? await empresasRes.json() : []);
+        const selectedEmpresaId = requestedEmpresaId || empresasData[0]?.id || '';
+        const tenantQuery = selectedEmpresaId
+          ? `?tenantId=${encodeURIComponent(selectedEmpresaId)}`
+          : '';
+        const [seriesRes, notasRes] = await Promise.all([
+          fetch(`/api/series${tenantQuery}`),
+          fetch(`/api/fiscal/nfe${tenantQuery}`),
+        ]);
+        const seriesData = seriesRes.ok ? await seriesRes.json() : [];
+        const notasData = notasRes.ok ? await notasRes.json() : [];
+        const nfeSeries = (Array.isArray(seriesData) ? seriesData : []).filter(
+          (serie: SerieFiscal) =>
+            serie.modelo === 'NFE_55' &&
+            serie.ativa &&
+            (!selectedEmpresaId || serie.empresaId === selectedEmpresaId),
+        );
+        setEmpresas(empresasData);
+        setSeries(nfeSeries);
+        setNotas(Array.isArray(notasData) ? notasData : []);
+        setEmpresaId(selectedEmpresaId);
+        setSerieFiscalId((current) =>
+          current && nfeSeries.some((serie) => serie.id === current)
+            ? current
+            : nfeSeries[0]?.id || '',
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [empresaId],
+  );
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   const criarRascunho = async () => {
     if (!empresaId || !serieSelecionada) {
@@ -100,7 +125,7 @@ export function NfeOperacionalClient() {
     setLoading(true);
     try {
       const accessKey = '42160412345678000195550010000000011000000019';
-      const res = await fetch('/api/fiscal/nfe', {
+      const res = await fetch(`/api/fiscal/nfe?tenantId=${encodeURIComponent(empresaId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,7 +154,7 @@ export function NfeOperacionalClient() {
       });
       if (!res.ok) throw new Error(await res.text());
       toast.success('Rascunho NF-e criado.');
-      await load();
+      await load(empresaId);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Falha ao criar rascunho.');
     } finally {
@@ -140,10 +165,13 @@ export function NfeOperacionalClient() {
   const emitir = async (id: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/fiscal/nfe/${id}/emitir`, { method: 'POST' });
+      const res = await fetch(
+        `/api/fiscal/nfe/${id}/emitir?tenantId=${encodeURIComponent(empresaId)}`,
+        { method: 'POST' },
+      );
       if (!res.ok) throw new Error(await res.text());
       toast.success('Emissão enviada para processamento.');
-      await load();
+      await load(empresaId);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Falha ao emitir NF-e.');
     } finally {
@@ -160,14 +188,17 @@ export function NfeOperacionalClient() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`/api/fiscal/nfe/${id}/cancelar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ justificativa }),
-      });
+      const res = await fetch(
+        `/api/fiscal/nfe/${id}/cancelar?tenantId=${encodeURIComponent(empresaId)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ justificativa }),
+        },
+      );
       if (!res.ok) throw new Error(await res.text());
       toast.success('Cancelamento processado.');
-      await load();
+      await load(empresaId);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Falha ao cancelar NF-e.');
     } finally {
@@ -187,12 +218,16 @@ export function NfeOperacionalClient() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+              <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
                 <RefreshCw className="h-4 w-4" />
                 Atualizar
               </Button>
               <Button size="sm" onClick={criarRascunho} disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4" />
+                )}
                 Rascunho real
               </Button>
             </div>
@@ -205,7 +240,11 @@ export function NfeOperacionalClient() {
               <select
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                 value={empresaId}
-                onChange={(event) => setEmpresaId(event.target.value)}
+                onChange={(event) => {
+                  setEmpresaId(event.target.value);
+                  setSerieFiscalId('');
+                  void load(event.target.value);
+                }}
               >
                 {empresas.map((empresa) => (
                   <option key={empresa.id} value={empresa.id}>
@@ -243,12 +282,17 @@ export function NfeOperacionalClient() {
               <tbody>
                 {notas.slice(0, 8).map((nota) => (
                   <tr key={nota.id} className="border-t">
-                    <td className="px-3 py-2">{new Date(nota.createdAt).toLocaleString('pt-BR')}</td>
+                    <td className="px-3 py-2">
+                      {new Date(nota.createdAt).toLocaleString('pt-BR')}
+                    </td>
                     <td className="px-3 py-2">
                       {nota.serie}/{nota.numero ?? '-'}
                     </td>
                     <td className="px-3 py-2">
-                      <StatusPill status={statusMap[nota.status] ?? 'rascunho'} label={nota.status} />
+                      <StatusPill
+                        status={statusMap[nota.status] ?? 'rascunho'}
+                        label={nota.status}
+                      />
                     </td>
                     <td className="px-3 py-2">
                       <div className="max-w-[260px] truncate">
@@ -265,12 +309,23 @@ export function NfeOperacionalClient() {
                           Emitir
                         </Button>
                         <Button size="icon" variant="ghost" asChild disabled={!nota.xmlDisponivel}>
-                          <a href={`/api/fiscal/nfe/${nota.id}/xml`} aria-label="Baixar XML">
+                          <a
+                            href={`/api/fiscal/nfe/${nota.id}/xml?tenantId=${encodeURIComponent(empresaId)}`}
+                            aria-label="Baixar XML"
+                          >
                             <Download className="h-4 w-4" />
                           </a>
                         </Button>
-                        <Button size="icon" variant="ghost" asChild disabled={!nota.danfeDisponivel}>
-                          <a href={`/api/fiscal/nfe/${nota.id}/danfe`} aria-label="Baixar DANFE">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          asChild
+                          disabled={!nota.danfeDisponivel}
+                        >
+                          <a
+                            href={`/api/fiscal/nfe/${nota.id}/danfe?tenantId=${encodeURIComponent(empresaId)}`}
+                            aria-label="Baixar DANFE"
+                          >
                             <FileText className="h-4 w-4" />
                           </a>
                         </Button>

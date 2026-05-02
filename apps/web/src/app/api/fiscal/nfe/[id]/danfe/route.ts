@@ -1,18 +1,20 @@
+import { ApiError, fetchApi } from '@/lib/api-client';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { ApiError, fetchApi } from '@/lib/api-client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const { id } = await params;
+  const tenantId = req.nextUrl.searchParams.get('tenantId');
   try {
     const data = await fetchApi<{ filename: string; contentBase64: string }>(
       `/api/fiscal/nfe/${id}/danfe`,
+      { tenantId },
     );
     return new NextResponse(Buffer.from(data.contentBase64, 'base64'), {
       headers: {

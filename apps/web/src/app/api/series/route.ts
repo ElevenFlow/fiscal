@@ -1,6 +1,6 @@
+import { ApiError, fetchApi } from '@/lib/api-client';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { ApiError, fetchApi } from '@/lib/api-client';
 
 /**
  * Route Handler: GET /api/series + POST /api/series (Plan 02-06).
@@ -15,23 +15,18 @@ import { ApiError, fetchApi } from '@/lib/api-client';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const tenantId = req.nextUrl.searchParams.get('tenantId');
   try {
-    const data = await fetchApi('/api/series');
+    const data = await fetchApi('/api/series', { tenantId });
     return NextResponse.json(data, {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (err) {
     if (err instanceof ApiError) {
-      return NextResponse.json(
-        { error: err.message },
-        { status: err.status },
-      );
+      return NextResponse.json({ error: err.message }, { status: err.status });
     }
-    return NextResponse.json(
-      { error: (err as Error).message },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }
 
@@ -48,14 +43,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   } catch (err) {
     if (err instanceof ApiError) {
-      return NextResponse.json(
-        { error: err.message },
-        { status: err.status },
-      );
+      return NextResponse.json({ error: err.message }, { status: err.status });
     }
-    return NextResponse.json(
-      { error: (err as Error).message },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }
