@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS DI exige valor runtime
 import { Reflector } from '@nestjs/core';
+import { type TenantScope, tenantStore } from '../../db/tenant-context';
 // biome-ignore lint/style/useImportType: NestJS DI exige valor runtime
 import { JwtService } from './jwt.service';
 
@@ -109,6 +110,7 @@ export class AuthGuard implements CanActivate {
       contabilidadeId: payload.contabilidadeId,
       role: payload.role,
     };
+    this.syncTenantStore(req, req.auth);
     return true;
   }
 
@@ -135,6 +137,7 @@ export class AuthGuard implements CanActivate {
       contabilidadeId: contabilidadeId ?? null,
       role: roleHeader === 'platform_admin' ? 'platform_admin' : 'tenant_user',
     };
+    this.syncTenantStore(req, req.auth);
     return true;
   }
 
@@ -145,4 +148,23 @@ export class AuthGuard implements CanActivate {
     const match = authorization?.match(/^Bearer\s+(.+)$/i);
     return match?.[1];
   }
+
+  private syncTenantStore(req: AuthedRequest, auth: AuthContext): void {
+    const tenantHeader = Array.isArray(req.headers['x-tenant-id'])
+      ? req.headers['x-tenant-id'][0]
+      : req.headers['x-tenant-id'];
+    const tenantId = tenantHeader && isUuid(tenantHeader) ? tenantHeader : null;
+
+    const scope: TenantScope = {
+      tenantId,
+      contabilidadeId: auth.contabilidadeId,
+      userId: auth.userId,
+      role: auth.role,
+    };
+    tenantStore.enterWith(scope);
+  }
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
