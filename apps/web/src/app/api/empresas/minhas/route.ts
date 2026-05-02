@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { ApiError, fetchApi } from '@/lib/api-client';
+import { NextResponse } from 'next/server';
 
 /**
  * Route Handler: GET /api/empresas/minhas (Plan 02-09).
@@ -23,18 +23,37 @@ export interface EmpresaDTO {
 }
 
 const fallbackEmpresas: EmpresaDTO[] = [
-  { id: 'e-1', razaoSocial: 'Oliveira Tech Soluções LTDA', cnpj: '12.345.678/0001-90', ambiente: 'producao' },
-  { id: 'e-2', razaoSocial: 'Clínica Vida Integral ME', cnpj: '23.456.789/0001-12', ambiente: 'producao' },
-  { id: 'e-3', razaoSocial: 'Solar Engenharia LTDA', cnpj: '34.567.890/0001-23', ambiente: 'homologacao' },
+  {
+    id: 'e-1',
+    razaoSocial: 'Oliveira Tech Soluções LTDA',
+    cnpj: '12.345.678/0001-90',
+    ambiente: 'producao',
+  },
+  {
+    id: 'e-2',
+    razaoSocial: 'Clínica Vida Integral ME',
+    cnpj: '23.456.789/0001-12',
+    ambiente: 'producao',
+  },
+  {
+    id: 'e-3',
+    razaoSocial: 'Solar Engenharia LTDA',
+    cnpj: '34.567.890/0001-23',
+    ambiente: 'homologacao',
+  },
 ];
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const data = await fetchApi<{ empresas: EmpresaDTO[] }>('/api/empresas/minhas');
-    return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
+    const data = await fetchApi<EmpresaDTO[] | { empresas: EmpresaDTO[] }>('/api/empresas/minhas');
+    const empresas = Array.isArray(data) ? data : data.empresas;
+    return NextResponse.json({ empresas }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     // Plan 02-02 entregará o endpoint apps/api; até lá, mock mantém UI viva.
-    if (err instanceof ApiError && (err.status === 404 || err.status === 401 || err.status === 500)) {
+    if (
+      err instanceof ApiError &&
+      (err.status === 404 || err.status === 401 || err.status === 500)
+    ) {
       return NextResponse.json(
         { empresas: fallbackEmpresas },
         { headers: { 'Cache-Control': 'no-store' } },

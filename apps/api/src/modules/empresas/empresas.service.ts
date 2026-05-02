@@ -1,15 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import type {
   EmpresaCreateInput,
   EmpresaListQuery,
   EmpresaUpdateInput,
   PageResult,
 } from '@nexo/shared';
-import {
-  DuplicateException,
-  NotFoundResourceException,
-} from '../../common/business.exception';
+import { Prisma } from '@prisma/client';
+import { DuplicateException, NotFoundResourceException } from '../../common/business.exception';
 import { parseSort } from '../../common/parse-sort';
 // biome-ignore lint/style/useImportType: NestJS DI exige valor runtime.
 import { PrismaService } from '../../db/prisma.service';
@@ -137,14 +134,10 @@ export class EmpresasService {
       if (dto.cnae !== undefined) data.cnae = dto.cnae;
       if (dto.regimeTributario !== undefined) data.regimeTributario = dto.regimeTributario;
       if (dto.endereco !== undefined) {
-        data.endereco = dto.endereco
-          ? (dto.endereco as Prisma.InputJsonValue)
-          : Prisma.JsonNull;
+        data.endereco = dto.endereco ? (dto.endereco as Prisma.InputJsonValue) : Prisma.JsonNull;
       }
       if (dto.contatos !== undefined) {
-        data.contatos = dto.contatos
-          ? (dto.contatos as Prisma.InputJsonValue)
-          : Prisma.JsonNull;
+        data.contatos = dto.contatos ? (dto.contatos as Prisma.InputJsonValue) : Prisma.JsonNull;
       }
       if (dto.ativo !== undefined) data.ativo = dto.ativo;
 
@@ -174,7 +167,7 @@ export class EmpresasService {
    * é uma operação identity-scoped (membership do user), não tenant-scoped.
    */
   async findMinhas(): Promise<unknown[]> {
-    const { contabilidadeId, role } = requireTenant();
+    const { contabilidadeId, role, userId } = requireTenant();
 
     return withTenantContext(
       this.prisma,
@@ -186,12 +179,43 @@ export class EmpresasService {
             orderBy: { razaoSocial: 'asc' },
           });
         }
-        if (!contabilidadeId) return [];
-        const links = await tx.contabilidadeEmpresa.findMany({
-          where: { contabilidadeId, ativo: true },
-          include: { empresa: true },
-        });
-        return links.map((l) => l.empresa).filter((e) => e.ativo);
+
+        const memberships = userId ? await tx.userMembership.findMany({ where: { userId } }) : [];
+        const contabilidadeIds = new Set<string>();
+        const empresaIds = new Set<string>();
+
+        if (contabilidadeId) contabilidadeIds.add(contabilidadeId);
+        for (const membership of memberships) {
+          if (membership.scopeType === 'contabilidade' && membership.scopeId) {
+            contabilidadeIds.add(membership.scopeId);
+          }
+          if (membership.scopeType === 'empresa' && membership.scopeId) {
+            empresaIds.add(membership.scopeId);
+          }
+        }
+
+        const empresas = new Map<string, unknown>();
+
+        if (contabilidadeIds.size > 0) {
+          const links = await tx.contabilidadeEmpresa.findMany({
+            where: { contabilidadeId: { in: [...contabilidadeIds] }, ativo: true },
+            include: { empresa: true },
+          });
+          for (const link of links) {
+            if (link.empresa.ativo) empresas.set(link.empresa.id, link.empresa);
+          }
+        }
+
+        if (empresaIds.size > 0) {
+          const directEmpresas = await tx.empresa.findMany({
+            where: { id: { in: [...empresaIds] }, ativo: true },
+          });
+          for (const empresa of directEmpresas) {
+            empresas.set(empresa.id, empresa);
+          }
+        }
+
+        return [...empresas.values()];
       },
     );
   }
