@@ -20,6 +20,28 @@ Nexo Fiscal é uma plataforma SaaS multiempresa brasileira que conecta contabili
 - **Compatibilidade de navegador**: Chrome, Edge, Firefox — últimas 2 versões. Safari desejável.
 <!-- GSD:project-end -->
 
+## Status do Projeto (2026-05)
+
+MVP técnico completo. **Phases 2 a 8 concluídas localmente** (não são mais mocks). Resumo:
+
+| Phase | Escopo | Status | Evidência |
+|---|---|---|---|
+| 01 | Foundation (shell, design system, auth pages) | ✅ | rotas + UI base |
+| 02 | Cadastros + Certificado A1 + Séries | ✅ | módulos `empresas`, `contabilidades`, `clientes`, `fornecedores`, `produtos`, `servicos`, `certificados`, `series` |
+| 02.1 | Auth in-house (JWT + sessions) | ✅ | Clerk removido; `/api/auth/{signin,signup,refresh,me,signout}` |
+| 03 | Fiscal NF-e (gateway + simulação SEFAZ-SC) | ✅ | módulo `fiscal/nfe`, fila BullMQ |
+| 04 | Fiscal NFS-e + Devolução | ✅ | módulo `fiscal/nfse`, `fiscal/devolucoes` |
+| 05 | Estoque + Importação XML | ✅ | módulos `estoque`, `integrations`, importação via `queue` |
+| 06 | Documentos, Alertas, Dashboards | ✅ | rotas web wired a `/api/{documentos,alertas,dashboard}` |
+| 07 | Configurações, Usuários, Auditoria/Hardening | ✅ | módulos `audit`, `usuarios`, painel admin |
+| 08 | Validação operacional pós-MVP | ✅ | typecheck/build/testes fiscais OK ([SUMMARY](.planning/phases/08-validacao-operacional-pos-mvp/08-01-SUMMARY.md)) |
+
+**Frontend wired a APIs reais** em todas as áreas listadas — `mock-data.ts` permanece apenas para o hub de Cadastros (cards do menu) e para o `MockAuthProvider` (perfil switcher de UI). Switcher de empresa e listagens consomem `/api/empresas/minhas` e `/api/empresas` (proxy server-side com Bearer JWT do cookie `nf_access`).
+
+**Pendências conhecidas:** vide [.planning/PENDENCIAS.md](.planning/PENDENCIAS.md). Pendências operacionais (homologação SEFAZ-SC/SVRS real, KMS CMK, S3 Object Lock, runtime Node 22 em produção) dependem de credenciais/infra fora do código.
+
+**Ambiente atual:** deploy Vercel para `@nexo/web`. Backend NestJS (`@nexo/api`) **ainda não está deployado** — daí seletores que dependem de `/api/empresas/*` aparecem vazios em preview Vercel sem `NEXT_PUBLIC_API_URL` apontando para um host real do `apps/api`.
+
 <!-- GSD:stack-start source:research/STACK.md -->
 ## Stack (resumo)
 
@@ -29,9 +51,9 @@ Detalhes completos, alternativas e rationale: [.planning/research/STACK.md](.pla
 - **Frontend:** Next.js 16 (App Router) + React 19 + Tailwind 3 + shadcn/ui + cmdk + Recharts + React Hook Form + Zod
 - **Backend:** NestJS 11 (Fastify adapter) + Pino + Zod + Prisma 6
 - **Banco:** Postgres 16 com RLS forçado, roles `app_user` (NOBYPASSRLS) / `app_admin` (BYPASSRLS, só migrations)
-- **Filas:** BullMQ + Redis 7 (planejado a partir da Phase 3)
+- **Filas:** BullMQ + Redis 7 (módulo `queue` ativo desde Phase 3 — XML import, lookup CFOP/NCM, jobs fiscais)
 - **Fiscal MVP:** gateway BaaS via porta `FiscalGateway` (Focus NFe primário, PlugNotas fallback). Internalização com NFeWizard-io diferida.
-- **Auth:** in-house JWT HS256 + argon2id + sessions com refresh rotation (Phase 02.1; Plans 2-5 em Phase 7.1 para email/hardening/MFA)
+- **Auth:** in-house JWT HS256 + argon2id + sessions com refresh rotation — Phase 02.1 concluída (Clerk removido; signin/signup/refresh/me em produção). Hardening adicional (MFA, email verify) deferido.
 - **Cloud:** AWS sa-east-1 (RDS Postgres + S3 Object Lock Compliance + KMS CMK por tenant + ElastiCache + Fargate ou Vercel `sao1`)
 - **Observabilidade:** Sentry + OpenTelemetry (no-op sem env)
 - **Tooling:** pnpm + Turborepo + Biome + Vitest + Playwright
@@ -72,7 +94,15 @@ Conventions not yet established. Will populate as patterns emerge during develop
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
-Architecture not yet mapped. Follow existing patterns found in the codebase.
+Monorepo pnpm + Turborepo:
+
+- `apps/web` — Next.js 16 (App Router). Rotas server-side proxam para `apps/api` via [`fetchApi`](apps/web/src/lib/api-client.ts) (lê `nf_access` cookie HttpOnly e injeta Bearer). Route group `(app)` serve dashboard em `/`. Páginas públicas: `/entrar`, `/cadastrar`, `/recuperar-senha`.
+- `apps/api` — NestJS 11 (Fastify). 23 módulos em `apps/api/src/modules/` (auth, tenants, rbac, admin, empresas, contabilidades, clientes, fornecedores, produtos, servicos, fiscal, certificados, series, estoque, operacional, lookup, audit, integrations, queue, usuarios, lgpd, health, storage, observability).
+- `packages/ui` — shadcn/ui + tokens. Transpilado direto pelo `apps/web` (sem build step).
+- `packages/shared` — types/schemas Zod compartilhados.
+- `prisma/` — schema único; runtime usa role `app_user` NOBYPASSRLS com `withTenantContext` setando `app.tenant_id`.
+
+**RBAC ativo** via `RolesGuard` + 6 papéis em `UserMembership` (`admin`, `contabilidade_owner/operador`, `empresa_owner/operador/leitura`). Empresas resolvidas por membership direto OU carteira da contabilidade (`contabilidade_empresas`). Listagem: `findMinhas()` em [`empresas.service.ts`](apps/api/src/modules/empresas/empresas.service.ts).
 <!-- GSD:architecture-end -->
 
 <!-- GSD:skills-start source:skills/ -->
