@@ -1,13 +1,13 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SigninSchema } from '@nexo/shared/auth';
-import type { z } from 'zod';
-import { useState } from 'react';
 import { Button, Input } from '@nexo/ui';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import type { z } from 'zod';
 
 type SigninForm = z.infer<typeof SigninSchema>;
 
@@ -30,6 +30,7 @@ function EntrarForm() {
     try {
       const res = await fetch('/api/auth/signin', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -42,7 +43,7 @@ function EntrarForm() {
 
       const next = searchParams.get('next');
       // Whitelist: apenas paths internos (sem protocolo — T-02.1-03-01)
-      const redirectTo = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+      const redirectTo = next?.startsWith('/') && !next.startsWith('//') ? next : '/';
       router.push(redirectTo);
     } catch {
       setError('Erro de conexão. Tente novamente.');

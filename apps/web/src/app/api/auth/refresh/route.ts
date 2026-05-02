@@ -1,3 +1,4 @@
+import { forwardSetCookies } from '@/lib/set-cookie';
 /**
  * POST /api/auth/refresh — proxy transparente para apps/api AuthController.
  * Repassa nf_refresh cookie; apps/api valida, gera novo access + refresh,
@@ -21,9 +22,8 @@ export async function POST(req: NextRequest) {
     headers: { 'Content-Type': 'application/json' },
   });
 
-  // Repassar Set-Cookie com tokens rotacionados
-  const setCookie = apiRes.headers.get('set-cookie');
-  if (setCookie) res.headers.set('set-cookie', setCookie);
+  // Repassar Set-Cookie com tokens rotacionados.
+  forwardSetCookies(apiRes.headers, res.headers);
 
   return res;
 }

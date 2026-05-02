@@ -1,3 +1,4 @@
+import { forwardSetCookies } from '@/lib/set-cookie';
 /**
  * POST /api/auth/signin — proxy transparente para apps/api AuthController.
  * Repassa cookies Set-Cookie do apps/api para o browser (T-02.1-03-05).
@@ -21,9 +22,8 @@ export async function POST(req: NextRequest) {
     headers: { 'Content-Type': 'application/json' },
   });
 
-  // Repassar Set-Cookie (nf_access + nf_refresh) do apps/api para o browser
-  const setCookie = apiRes.headers.get('set-cookie');
-  if (setCookie) res.headers.set('set-cookie', setCookie);
+  // Repassar Set-Cookie (nf_access + nf_refresh) do apps/api para o browser.
+  forwardSetCookies(apiRes.headers, res.headers);
 
   return res;
 }

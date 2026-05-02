@@ -1,3 +1,4 @@
+import { forwardSetCookies } from '@/lib/set-cookie';
 /**
  * POST /api/auth/signout — proxy transparente para apps/api AuthController.
  * Repassa nf_refresh cookie para apps/api revogar a sessão no DB.
@@ -18,9 +19,8 @@ export async function POST(req: NextRequest) {
 
   const res = new NextResponse(null, { status: apiRes.status });
 
-  // Repassar clear-cookie do apps/api para o browser
-  const setCookie = apiRes.headers.get('set-cookie');
-  if (setCookie) res.headers.set('set-cookie', setCookie);
+  // Repassar clear-cookie do apps/api para o browser.
+  forwardSetCookies(apiRes.headers, res.headers);
 
   return res;
 }

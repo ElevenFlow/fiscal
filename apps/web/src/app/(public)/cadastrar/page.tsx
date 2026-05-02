@@ -1,12 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SignupSchema } from '@nexo/shared/auth';
-import type { z } from 'zod';
-import { useState } from 'react';
 import { Button, Input } from '@nexo/ui';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import type { z } from 'zod';
 
 type SignupForm = z.infer<typeof SignupSchema>;
 
@@ -24,6 +24,7 @@ export default function CadastrarPage() {
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
