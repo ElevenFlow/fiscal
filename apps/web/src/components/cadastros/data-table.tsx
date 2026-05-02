@@ -86,6 +86,7 @@ export function DataTable<T>({
                 <Button
                   variant="outline"
                   size="icon"
+                  className="h-9 w-9"
                   onClick={onRefresh}
                   disabled={isRefreshing}
                   aria-label="Atualizar"
