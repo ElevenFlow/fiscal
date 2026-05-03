@@ -7,9 +7,6 @@
 import { DataTable, type DataTableColumn } from '@/components/cadastros/data-table';
 import { RowActions } from '@/components/cadastros/row-actions';
 import { UfSelect } from '@/components/forms/uf-select';
-import { useMockUser } from '@/lib/mock-auth';
-import type { MockUser } from '@/lib/mock-auth';
-import { contabilidades as mockContabilidades, empresas as mockEmpresas } from '@/lib/mock-data';
 import { Button, StatusPill, cn } from '@nexo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
@@ -50,65 +47,8 @@ interface PageResult<T> {
   total: number;
 }
 
-/**
- * Fallback mock — usado quando o backend NestJS nao esta deployado/acessivel.
- * Filtra por perfil ativo do MockAuthProvider. Ver PEND-027.
- */
-const REGIME_TO_API: Record<string, string> = {
-  'Simples Nacional': 'simples_nacional',
-  'Lucro Presumido': 'lucro_presumido',
-  'Lucro Real': 'lucro_real',
-  MEI: 'mei',
-};
-
-function mockEmpresasPage(
-  user: MockUser,
-  filters: { search: string; regime: string; uf: string; page: number; pageSize: number },
-): PageResult<EmpresaListItem> {
-  let list = mockEmpresas.filter((e) => {
-    if (user.perfil === 'admin') return true;
-    if (user.perfil === 'contabilidade') return e.contabilidadeId === user.contabilidadeId;
-    return e.id === user.empresaAtivaId;
-  });
-  if (filters.search) {
-    const q = filters.search.toLowerCase();
-    list = list.filter(
-      (e) =>
-        e.razaoSocial.toLowerCase().includes(q) ||
-        e.nomeFantasia.toLowerCase().includes(q) ||
-        e.cnpj.includes(q),
-    );
-  }
-  if (filters.regime) {
-    list = list.filter((e) => REGIME_TO_API[e.regime] === filters.regime);
-  }
-  if (filters.uf) list = list.filter((e) => e.uf === filters.uf);
-
-  const total = list.length;
-  const start = (filters.page - 1) * filters.pageSize;
-  const slice = list.slice(start, start + filters.pageSize);
-  const items: EmpresaListItem[] = slice.map((e) => {
-    const cont = mockContabilidades.find((c) => c.id === e.contabilidadeId);
-    return {
-      id: e.id,
-      razaoSocial: e.razaoSocial,
-      nomeFantasia: e.nomeFantasia || null,
-      cnpj: e.cnpj,
-      regimeTributario: REGIME_TO_API[e.regime] ?? e.regime,
-      endereco: { cidade: e.cidade, uf: e.uf },
-      contabilidades: cont
-        ? [{ ativo: true, contabilidade: { id: cont.id, nome: cont.razaoSocial, cnpj: cont.cnpj } }]
-        : [],
-      ativo: e.status === 'ativa',
-      createdAt: new Date().toISOString(),
-    };
-  });
-  return { items, page: filters.page, pageSize: filters.pageSize, total };
-}
-
 export default function EmpresasListPage() {
   const qc = useQueryClient();
-  const user = useMockUser();
   const [search, setSearch] = useState('');
   const [regime, setRegime] = useState('');
   const [uf, setUf] = useState('');
@@ -116,7 +56,7 @@ export default function EmpresasListPage() {
   const pageSize = 10;
 
   const { data, isFetching, isLoading, refetch } = useQuery<PageResult<EmpresaListItem>>({
-    queryKey: ['empresas', { page, pageSize, search, regime, uf, perfil: user.perfil }],
+    queryKey: ['empresas', { page, pageSize, search, regime, uf }],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
@@ -125,17 +65,9 @@ export default function EmpresasListPage() {
         ...(regime ? { regimeTributario: regime } : {}),
         ...(uf ? { uf } : {}),
       });
-      try {
-        const res = await fetch(`/api/empresas?${params}`);
-        if (!res.ok) throw new Error('Falha ao carregar empresas');
-        const data = (await res.json()) as PageResult<EmpresaListItem>;
-        if (data.items.length === 0 && data.total === 0) {
-          return mockEmpresasPage(user, { search, regime, uf, page, pageSize });
-        }
-        return data;
-      } catch {
-        return mockEmpresasPage(user, { search, regime, uf, page, pageSize });
-      }
+      const res = await fetch(`/api/empresas?${params}`);
+      if (!res.ok) throw new Error('Falha ao carregar empresas');
+      return (await res.json()) as PageResult<EmpresaListItem>;
     },
   });
 

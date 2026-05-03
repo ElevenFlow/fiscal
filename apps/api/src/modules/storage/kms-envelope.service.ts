@@ -72,12 +72,15 @@ export class KmsEnvelopeService implements OnModuleInit {
       return;
     }
 
-    // Vercel é um runtime provisório para auth/CRUD; deixa a API subir sem KMS,
-    // mas operações de certificado continuam falhando em generateDek/decryptDek.
-    if (isProd && process.env.VERCEL !== '1') {
+    // Escape hatches para deploys de teste sem KMS real (Vercel preview, Render
+    // staging-test). Boot prossegue, mas operações de certificado A1 continuam
+    // falhando em generateDek/decryptDek — é só pra liberar auth/CRUD/listagens.
+    const allowNoKms =
+      process.env.VERCEL === '1' || process.env.ALLOW_NO_KMS === '1';
+    if (isProd && !allowNoKms) {
       // T-02-04-12: fail-closed — sem CMK em prod/staging é incidente de configuração.
       throw new Error(
-        'KMS_CERT_KEY_ID is required in production/staging — refusing to boot without real CMK',
+        'KMS_CERT_KEY_ID is required in production/staging — refusing to boot without real CMK. Para deploy de teste sem fluxo de certificado, definir ALLOW_NO_KMS=1.',
       );
     }
 
