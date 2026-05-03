@@ -1,0 +1,32 @@
+# Render Blueprint — apps/api (NestJS).
+# Para usar: Render Dashboard > New > Blueprint > seleciona o repo.
+# As env vars marcadas `sync: false` precisam ser preenchidas manualmente
+# no painel do Render (Neon DATABASE_URL, Upstash REDIS_URL, etc.).
+
+services:
+  - type: web
+    name: nexofiscal-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    region: virginia
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3333
+      - key: ALLOW_HEADER_AUTH
+        value: "false"
+      - key: AUTH_JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_ADMIN_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false

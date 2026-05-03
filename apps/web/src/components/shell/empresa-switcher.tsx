@@ -1,5 +1,8 @@
 'use client';
 
+import { useMockUser } from '@/lib/mock-auth';
+import { empresas as mockEmpresas } from '@/lib/mock-data';
+import type { MockUser } from '@/lib/mock-auth';
 import {
   Badge,
   Button,
@@ -20,7 +23,27 @@ interface EmpresaItem {
   ambiente?: 'producao' | 'homologacao';
 }
 
+/**
+ * Fallback mock — usado quando o backend NestJS nao esta deployado/acessivel.
+ * Filtra por perfil ativo do MockAuthProvider. Ver PEND-027 em
+ * .planning/PENDENCIAS.md (deploy do apps/api remove a necessidade).
+ */
+function mockEmpresasForUser(user: MockUser): EmpresaItem[] {
+  const filtered = mockEmpresas.filter((e) => {
+    if (user.perfil === 'admin') return true;
+    if (user.perfil === 'contabilidade') return e.contabilidadeId === user.contabilidadeId;
+    return e.id === user.empresaAtivaId;
+  });
+  return filtered.map((e) => ({
+    id: e.id,
+    razaoSocial: e.razaoSocial,
+    cnpj: e.cnpj,
+    ambiente: 'producao',
+  }));
+}
+
 export function EmpresaSwitcher() {
+  const user = useMockUser();
   const [empresas, setEmpresas] = useState<EmpresaItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
 
@@ -32,22 +55,22 @@ export function EmpresaSwitcher() {
         const json = (await r.json()) as { empresas?: EmpresaItem[] };
         if (cancelled) return;
 
-        const nextEmpresas = json.empresas ?? [];
+        const nextEmpresas = json.empresas?.length ? json.empresas : mockEmpresasForUser(user);
         setEmpresas(nextEmpresas);
         setSelectedId((prev) =>
           nextEmpresas.some((empresa) => empresa.id === prev) ? prev : (nextEmpresas[0]?.id ?? ''),
         );
       })
       .catch(() => {
-        if (!cancelled) {
-          setEmpresas([]);
-          setSelectedId('');
-        }
+        if (cancelled) return;
+        const fallback = mockEmpresasForUser(user);
+        setEmpresas(fallback);
+        setSelectedId(fallback[0]?.id ?? '');
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user]);
 
   const selected = empresas.find((e) => e.id === selectedId) ?? empresas[0];
 
