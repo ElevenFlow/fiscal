@@ -146,6 +146,68 @@ Se 502/timeout: cold start. Tenta de novo em 5s.
 | `function size > 50MB` | Bundle estourou | `excludeFiles` em vercel.json (excluir tests/, fixtures/, etc) |
 | BullMQ tentando conectar Redis em prod | `REDIS_URL` setada por engano | Remove env var no Project B; QueueModule no-op sem ela |
 
+## Render (caminho atualmente recomendado)
+
+Substitui a topologia "Vercel-Project-B" para `apps/api` — Render roda Docker always-on,
+o que é necessário para BullMQ, NF-e (Phase 3+) e lookup syncs.
+
+Topologia: **Vercel (`@nexo/web`) + Render (`@nexo/api`) + Neon (Postgres) + Upstash (Redis)**.
+
+### Arquivos do repo
+
+- [`apps/api/Dockerfile`](../apps/api/Dockerfile) — Node 22 + pnpm, multi-stage.
+- [`apps/api/scripts/release.sh`](../apps/api/scripts/release.sh) — `prisma migrate deploy` + `node dist/main.js`.
+- [`render.yaml`](../render.yaml) — blueprint declarativo lido pelo Render no primeiro deploy.
+- [`.dockerignore`](../.dockerignore) — exclui `.planning`, `node_modules`, etc.
+
+### Pré-requisitos
+
+- [ ] Neon: projeto `nexofiscal` criado, extensões `uuid-ossp`, `pgcrypto`, `pg_trgm` habilitadas, `DATABASE_URL` em mãos.
+- [ ] Upstash: Redis criado em sa-east-1, `REDIS_URL` em mãos (`rediss://...`).
+- [ ] `AUTH_JWT_SECRET` gerado: `openssl rand -hex 32`.
+
+### Passos
+
+1. **Render Dashboard** → **New** → **Blueprint** → conecta o repo. Render lê `render.yaml`
+   e propõe criar `nexofiscal-api`. Confirma.
+2. No painel do serviço → **Environment** → preenche as vars marcadas `sync: false`:
+   - `AUTH_JWT_SECRET` (mesmo valor que vai pra Vercel)
+   - `DATABASE_URL` (Neon, role default, `?sslmode=require`)
+   - `DATABASE_ADMIN_URL` (igual ao `DATABASE_URL` no setup Neon — ele não tem role separado por default; veja nota abaixo)
+   - `REDIS_URL` (Upstash, `rediss://...`)
+   - `WEB_ORIGIN` (URL do projeto Vercel, ex: `https://nexofiscal.vercel.app`)
+3. Render builda. Logs OK = `prisma migrate deploy` aplica todas as migrations + `Listening on 0.0.0.0:3333`.
+4. Health: `https://nexofiscal-api.onrender.com/api/health` retorna 200.
+5. **Seed do admin** (uma vez): Render serviço → **Shell** → `npx tsx prisma/seed-admin.ts`
+   (variáveis exigidas em [`apps/api/prisma/seed-admin.ts`](../apps/api/prisma/seed-admin.ts)).
+6. **Vercel** (projeto `@nexo/web`) → Settings → Environment Variables:
+   - `NEXT_PUBLIC_API_URL=https://nexofiscal-api.onrender.com`
+   - `AUTH_JWT_SECRET` = mesmo do Render
+   - **Redeploy**.
+
+### Nota sobre Neon + RLS
+
+O `init.sql` local cria roles `app_admin` (BYPASSRLS) e `app_user` (NOBYPASSRLS) — **Neon
+não permite a flag BYPASSRLS** (privilégio de superuser indisponível em managed Postgres).
+Workaround MVP: usar o role default do Neon (que é dono das tabelas e bypassa RLS por
+ownership, salvo se a tabela tiver `FORCE ROW LEVEL SECURITY`) tanto em `DATABASE_URL`
+quanto em `DATABASE_ADMIN_URL`. Hardening real: criar role separado via SQL e ajustar
+políticas; vide `PEND-027`.
+
+### Limitações Free Tier do Render
+
+- Web Service free **dorme após 15 min sem tráfego** (~30s de wake-up). Para crons BullMQ
+  rodarem 24/7, upgrade para `starter` (~$7/mês).
+- Build pode demorar ~5–7 min na primeira vez (Docker layers do zero).
+
+### Após o backend online
+
+Remover o fallback mock client-side adicionado para destravar a Vercel:
+- [`apps/web/src/components/shell/empresa-switcher.tsx`](../apps/web/src/components/shell/empresa-switcher.tsx)
+- [`apps/web/src/app/(app)/cadastros/empresas/page.tsx`](../apps/web/src/app/(app)/cadastros/empresas/page.tsx)
+
+Closes `PEND-027`.
+
 ## Pendências de hardening pré-cliente
 
 1. Trocar senhas hardcoded `app_admin_dev_pass` / `app_user_dev_pass` por aleatórias antes de produção real (estão visíveis no `infra/postgres/init.sql` committado).
