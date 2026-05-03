@@ -20,6 +20,10 @@ services:
         value: 3333
       - key: ALLOW_HEADER_AUTH
         value: "false"
+      # MVP test-deploy: sem AWS KMS configurado. Cert A1 nao pode ser usado, mas
+      # auth/CRUD/listagens funcionam. Trocar por KMS_CERT_KEY_ID real em producao.
+      - key: ALLOW_NO_KMS
+        value: "1"
       - key: AUTH_JWT_SECRET
         sync: false
       - key: DATABASE_URL
