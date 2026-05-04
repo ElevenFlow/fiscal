@@ -166,25 +166,12 @@ export class EmpresasService {
 
   async findMinhas(): Promise<unknown[]> {
     const { contabilidadeId, role, userId } = requireTenant();
-    // DEBUG-EMPRESAS-VAZIO: instrumentacao temporaria — remover apos diagnostico
-    console.log('[DBG findMinhas] requireTenant=', { role, userId, contabilidadeId });
 
     return withTenantContext(
       this.prisma,
       { tenantId: null, role: 'platform_admin' },
       async (tx) => {
         if (role === 'platform_admin') {
-          // DEBUG: contar empresas sem WHERE pra isolar se RLS ou where filter
-          const totalSemWhere = await tx.empresa.count();
-          const totalAtivas = await tx.empresa.count({ where: { ativo: true } });
-          const rolePg: { role: string; tenant: string }[] = await tx.$queryRawUnsafe(
-            "SELECT current_setting('app.role', true) AS role, current_setting('app.current_tenant', true) AS tenant",
-          );
-          console.log('[DBG findMinhas] tx counts=', {
-            totalSemWhere,
-            totalAtivas,
-            pgSetting: rolePg[0],
-          });
           return tx.empresa.findMany({
             where: { ativo: true },
             orderBy: { razaoSocial: 'asc' },
