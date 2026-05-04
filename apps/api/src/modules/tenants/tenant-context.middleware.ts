@@ -62,7 +62,17 @@ export class TenantContextMiddleware implements NestMiddleware {
       return;
     }
 
-    // Fallback para rotas @Public() (health, webhook) ou dev ALLOW_HEADER_AUTH.
+    // BUG FIX: middleware roda ANTES do AuthGuard em NestJS, entao req.auth
+    // ainda nao existe. Anteriormente caiamos no fallback header-auth e
+    // setavamos role=anonymous via tenantStore.run(), o que mascarava o
+    // enterWith() do AuthGuard subsequente. Agora apenas seguimos sem mexer
+    // no store; o AuthGuard popula o tenantStore com o JWT real.
+    if (!process.env.ALLOW_HEADER_AUTH || process.env.ALLOW_HEADER_AUTH !== 'true') {
+      next();
+      return;
+    }
+
+    // Fallback header-auth somente em dev (ALLOW_HEADER_AUTH=true).
     const contabilidadeHeader = headers['x-contabilidade-id'];
     const contabilidadeId = typeof contabilidadeHeader === 'string' ? contabilidadeHeader : null;
     const userHeader = headers['x-user-id'];
