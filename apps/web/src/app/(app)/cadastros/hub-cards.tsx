@@ -1,14 +1,6 @@
 'use client';
 
 import { useMockRole } from '@/lib/mock-auth';
-import {
-  clientes,
-  contabilidades,
-  empresas,
-  fornecedores,
-  produtos,
-  servicos,
-} from '@/lib/mock-data';
 import type { Role } from '@/lib/mock-data';
 import { Card, CardContent } from '@nexo/ui';
 import {
@@ -27,8 +19,6 @@ interface HubCard {
   href: string;
   title: string;
   description: string;
-  count: number;
-  countLabel: string;
   icon: LucideIcon;
   accent: string;
   roles: Role[];
@@ -41,8 +31,6 @@ export function CadastrosHubCards() {
       href: '/cadastros/empresas',
       title: 'Empresas',
       description: 'Cadastro completo por empresa — certificado, regime e endereço.',
-      count: empresas.length,
-      countLabel: empresas.length === 1 ? 'empresa cadastrada' : 'empresas cadastradas',
       icon: Building2,
       accent: 'bg-brand-blue/10 text-brand-blue',
       roles: ['admin', 'contabilidade'],
@@ -51,8 +39,6 @@ export function CadastrosHubCards() {
       href: '/cadastros/contabilidades',
       title: 'Contabilidades',
       description: 'Escritórios e responsáveis técnicos com suas carteiras.',
-      count: contabilidades.length,
-      countLabel: contabilidades.length === 1 ? 'contabilidade' : 'contabilidades',
       icon: Briefcase,
       accent: 'bg-brand-green/10 text-brand-green',
       roles: ['admin'],
@@ -61,8 +47,6 @@ export function CadastrosHubCards() {
       href: '/cadastros/clientes',
       title: 'Clientes',
       description: 'PF e PJ — base única para emissão de NFS-e e NF-e.',
-      count: clientes.length,
-      countLabel: clientes.length === 1 ? 'cliente' : 'clientes',
       icon: Users,
       accent: 'bg-brand-blue/10 text-brand-blue',
       roles: ['admin', 'contabilidade', 'empresa'],
@@ -71,8 +55,6 @@ export function CadastrosHubCards() {
       href: '/cadastros/fornecedores',
       title: 'Fornecedores',
       description: 'Parceiros comerciais com histórico de compras e condições.',
-      count: fornecedores.length,
-      countLabel: fornecedores.length === 1 ? 'fornecedor' : 'fornecedores',
       icon: Truck,
       accent: 'bg-amber-500/10 text-amber-600',
       roles: ['admin', 'contabilidade', 'empresa'],
@@ -81,8 +63,6 @@ export function CadastrosHubCards() {
       href: '/cadastros/produtos',
       title: 'Produtos',
       description: 'SKUs com NCM, CFOP, preços e controle de estoque.',
-      count: produtos.length,
-      countLabel: produtos.length === 1 ? 'produto' : 'produtos',
       icon: Package,
       accent: 'bg-purple-500/10 text-purple-600',
       roles: ['admin', 'contabilidade', 'empresa'],
@@ -91,8 +71,6 @@ export function CadastrosHubCards() {
       href: '/cadastros/servicos',
       title: 'Serviços',
       description: 'Catálogo com código municipal (LC 116) e alíquota ISS.',
-      count: servicos.length,
-      countLabel: servicos.length === 1 ? 'serviço' : 'serviços',
       icon: Wrench,
       accent: 'bg-brand-green/10 text-brand-green',
       roles: ['admin', 'contabilidade', 'empresa'],
@@ -117,9 +95,6 @@ export function CadastrosHubCards() {
                   <div className="flex items-center justify-between gap-2">
                     <h2 className="text-base font-semibold">{card.title}</h2>
                     <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                  <div className="mt-0.5 text-xs font-medium text-muted-foreground">
-                    {card.count} {card.countLabel}
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
                 </div>
