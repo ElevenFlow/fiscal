@@ -43,6 +43,7 @@ import { RbacModule } from './modules/rbac/rbac.module';
 import { RolesGuard } from './modules/rbac/roles.guard';
 import { StorageModule } from './modules/storage/storage.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
+import { TenantContextInterceptor } from './modules/tenants/tenant-context.interceptor';
 
 @Module({
   imports: [
@@ -101,6 +102,13 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard, // Aplica RBAC globalmente; rotas sem @Roles() passam (early return)
+    },
+    {
+      // Wrappa cada request com tenantStore.run() apos AuthGuard popular req.auth.
+      // Necessario porque enterWith() no guard nao propaga para todo o async chain
+      // do controller — interceptor envolve o handler downstream com run() proprio.
+      provide: APP_INTERCEPTOR,
+      useClass: TenantContextInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,
